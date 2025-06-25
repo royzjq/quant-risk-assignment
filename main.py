@@ -1,4 +1,3 @@
-#!/usr/bin/env python3
 """
 Quantitative Risk Analysis - Main Pipeline
 
@@ -20,7 +19,6 @@ from pathlib import Path
 sys.path.append('validation')
 sys.path.append('data_prep')
 sys.path.append('analysis')
-sys.path.append('visualization')
 
 from validation.exec_validator import validate_exec_csv
 from data_prep.data_processor import prepare_symbol_data, save_to_parquet
