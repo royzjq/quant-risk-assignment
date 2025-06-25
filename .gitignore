@@ -1,0 +1,14 @@
+"" 
+*.parquet
+*.csv 
+*.html
+*.png
+*.pdf
+*.jpg
+*.jpeg
+*.gif
+*.bmp
+*.tiff
+*.ico
+data/
+results/
