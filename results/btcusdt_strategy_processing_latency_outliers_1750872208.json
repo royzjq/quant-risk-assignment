@@ -1,0 +1,198 @@
+{
+  "symbol": "BTCUSDT",
+  "analysis_type": "strategy_processing_latency_outliers",
+  "threshold_sigma": 2.5,
+  "total_outliers": 19,
+  "outliers": [
+    {
+      "index": 0,
+      "latency_value": 48000.0,
+      "z_score": 2.5375670653578424,
+      "exec_id": null,
+      "exec_datetime": "",
+      "side": 2,
+      "quantity": 0.016,
+      "price": 22391.0
+    },
+    {
+      "index": 1,
+      "latency_value": 48000.0,
+      "z_score": 2.5375670653578424,
+      "exec_id": null,
+      "exec_datetime": "",
+      "side": 2,
+      "quantity": 0.017,
+      "price": 22345.0
+    },
+    {
+      "index": 2,
+      "latency_value": 50000.0,
+      "z_score": 2.696316450331472,
+      "exec_id": null,
+      "exec_datetime": "",
+      "side": 1,
+      "quantity": 0.017,
+      "price": 21847.8
+    },
+    {
+      "index": 3,
+      "latency_value": 55000.0,
+      "z_score": 3.093189912765545,
+      "exec_id": null,
+      "exec_datetime": "",
+      "side": 1,
+      "quantity": 0.016,
+      "price": 21877.7
+    },
+    {
+      "index": 4,
+      "latency_value": 53000.0,
+      "z_score": 2.934440527791916,
+      "exec_id": null,
+      "exec_datetime": "",
+      "side": 1,
+      "quantity": 0.018000000000000002,
+      "price": 21876.2
+    },
+    {
+      "index": 5,
+      "latency_value": 61000.0,
+      "z_score": 3.5694380676864332,
+      "exec_id": null,
+      "exec_datetime": "",
+      "side": 1,
+      "quantity": 0.016,
+      "price": 21875.5
+    },
+    {
+      "index": 6,
+      "latency_value": 55000.0,
+      "z_score": 3.093189912765545,
+      "exec_id": null,
+      "exec_datetime": "",
+      "side": 1,
+      "quantity": 0.014,
+      "price": 21906.1
+    },
+    {
+      "index": 7,
+      "latency_value": 59000.0,
+      "z_score": 3.4106886827128036,
+      "exec_id": null,
+      "exec_datetime": "",
+      "side": 1,
+      "quantity": 0.017,
+      "price": 22040.3
+    },
+    {
+      "index": 8,
+      "latency_value": 63000.0,
+      "z_score": 3.7281874526600625,
+      "exec_id": null,
+      "exec_datetime": "",
+      "side": 1,
+      "quantity": 0.011,
+      "price": 22023.9
+    },
+    {
+      "index": 9,
+      "latency_value": 52000.0,
+      "z_score": 2.8550658353051013,
+      "exec_id": null,
+      "exec_datetime": "",
+      "side": 1,
+      "quantity": 0.019,
+      "price": 21988.9
+    },
+    {
+      "index": 10,
+      "latency_value": 112000.0,
+      "z_score": 7.61754738451398,
+      "exec_id": null,
+      "exec_datetime": "",
+      "side": 1,
+      "quantity": 0.019,
+      "price": 21960.5
+    },
+    {
+      "index": 11,
+      "latency_value": 61000.0,
+      "z_score": 3.5694380676864332,
+      "exec_id": null,
+      "exec_datetime": "",
+      "side": 1,
+      "quantity": 0.018000000000000002,
+      "price": 21964.7
+    },
+    {
+      "index": 12,
+      "latency_value": 64000.0,
+      "z_score": 3.807562145146877,
+      "exec_id": null,
+      "exec_datetime": "",
+      "side": 1,
+      "quantity": 0.017,
+      "price": 22032.7
+    },
+    {
+      "index": 13,
+      "latency_value": 53000.0,
+      "z_score": 2.934440527791916,
+      "exec_id": null,
+      "exec_datetime": "",
+      "side": 2,
+      "quantity": 0.018000000000000002,
+      "price": 21908.6
+    },
+    {
+      "index": 14,
+      "latency_value": 48000.0,
+      "z_score": 2.5375670653578424,
+      "exec_id": null,
+      "exec_datetime": "",
+      "side": 2,
+      "quantity": 0.016,
+      "price": 21972.5
+    },
+    {
+      "index": 15,
+      "latency_value": 48000.0,
+      "z_score": 2.5375670653578424,
+      "exec_id": null,
+      "exec_datetime": "",
+      "side": 2,
+      "quantity": 0.016,
+      "price": 21711.6
+    },
+    {
+      "index": 16,
+      "latency_value": 107000.0,
+      "z_score": 7.220673922079906,
+      "exec_id": null,
+      "exec_datetime": "",
+      "side": 1,
+      "quantity": 0.02,
+      "price": 21892.5
+    },
+    {
+      "index": 17,
+      "latency_value": 50000.0,
+      "z_score": 2.696316450331472,
+      "exec_id": null,
+      "exec_datetime": "",
+      "side": 2,
+      "quantity": 0.016,
+      "price": 22187.8
+    },
+    {
+      "index": 18,
+      "latency_value": 57000.0,
+      "z_score": 3.2519392977391743,
+      "exec_id": null,
+      "exec_datetime": "",
+      "side": 1,
+      "quantity": 0.019,
+      "price": 21683.8
+    }
+  ]
+}

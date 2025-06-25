@@ -1,0 +1,88 @@
+{
+  "symbol": "EOSUSDT",
+  "analysis_type": "strategy_processing_latency_outliers",
+  "threshold_sigma": 2.5,
+  "total_outliers": 8,
+  "outliers": [
+    {
+      "index": 0,
+      "latency_value": 398000.0,
+      "z_score": 3.7351183891431905,
+      "exec_id": null,
+      "exec_datetime": "",
+      "side": 1,
+      "quantity": 391.8,
+      "price": 1.157
+    },
+    {
+      "index": 1,
+      "latency_value": 376000.0,
+      "z_score": 3.509189091531648,
+      "exec_id": null,
+      "exec_datetime": "",
+      "side": 1,
+      "quantity": 737.2,
+      "price": 1.156
+    },
+    {
+      "index": 2,
+      "latency_value": 3453000.0,
+      "z_score": 35.10848221656417,
+      "exec_id": null,
+      "exec_datetime": "",
+      "side": 1,
+      "quantity": 259.9,
+      "price": 1.156
+    },
+    {
+      "index": 3,
+      "latency_value": 318000.0,
+      "z_score": 2.9135573069194005,
+      "exec_id": null,
+      "exec_datetime": "",
+      "side": 1,
+      "quantity": 85.0,
+      "price": 1.156
+    },
+    {
+      "index": 4,
+      "latency_value": 365000.0,
+      "z_score": 3.396224442725877,
+      "exec_id": null,
+      "exec_datetime": "",
+      "side": 2,
+      "quantity": 441.9,
+      "price": 1.159
+    },
+    {
+      "index": 5,
+      "latency_value": 375000.0,
+      "z_score": 3.498919578003851,
+      "exec_id": null,
+      "exec_datetime": "",
+      "side": 1,
+      "quantity": 93.5,
+      "price": 1.133
+    },
+    {
+      "index": 6,
+      "latency_value": 294000.0,
+      "z_score": 2.6670889822522637,
+      "exec_id": null,
+      "exec_datetime": "",
+      "side": 1,
+      "quantity": 213.6,
+      "price": 1.16
+    },
+    {
+      "index": 7,
+      "latency_value": 304000.0,
+      "z_score": 2.769784117530237,
+      "exec_id": null,
+      "exec_datetime": "",
+      "side": 2,
+      "quantity": 147.6,
+      "price": 1.147
+    }
+  ]
+}
