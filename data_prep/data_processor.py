@@ -189,23 +189,22 @@ def merge_market_with_exec(market_df, exec_df):
     )
     
     # Find exec records that were not matched
-    matched_exec_times = set(merged_df.filter(pl.col('eTm').is_not_null())['eTm'].to_list())
-    all_exec_times = set(exec_df_sorted['eTm'].to_list())
-    missing_exec_times = all_exec_times - matched_exec_times
+    # Use anti-join to find unmatched records efficiently in Polars
+    unmatched_exec_df = exec_df_sorted.join(
+        merged_df.filter(pl.col('eTm').is_not_null()).select(pl.col('eTm').alias('eTm_matched')),
+        left_on='eTm',
+        right_on='eTm_matched',
+        how='anti'
+    )
     
-    if len(missing_exec_times) > 0:
-        print(f"Found {len(missing_exec_times)} exec records not matched")
+    if len(unmatched_exec_df) > 0:
+        print(f"Found {len(unmatched_exec_df)} exec records not matched")
         print("Creating new rows for unmatched exec records...")
-        
-        # Get unmatched exec records
-        unmatched_exec = exec_df_sorted.filter(pl.col('eTm').is_in(list(missing_exec_times)))
         
         # Create new rows with only exec data by adding NaN columns for market data
         market_cols = market_df_sorted.columns
-        exec_cols = exec_df_sorted.columns
-        
         # Add market columns as null to unmatched exec records, and set timestamp = eTm_microseconds
-        unmatched_with_market_cols = unmatched_exec.with_columns([
+        unmatched_with_market_cols = unmatched_exec_df.with_columns([
             pl.col('eTm_microseconds').alias('timestamp')
         ])
         
@@ -242,46 +241,46 @@ def merge_market_with_exec(market_df, exec_df):
         
         print(f"Found {len(last_exec_records)} unique executions with their last matches")
         
-        # Get all execution records that are NOT the last match (these will become market-only)
-        # Create a set of (eTm, timestamp) pairs for the last matches
-        last_matches = set()
-        for row in last_exec_records.iter_rows():
-            etm_val = row[last_exec_records.columns.index('eTm')]
-            timestamp_val = row[last_exec_records.columns.index('timestamp')]
-            last_matches.add((etm_val, timestamp_val))
-        
-        # Filter out non-last execution matches and convert them to market-only records
-        # First, identify the execution columns that need to be set to null
-        exec_cols = set(exec_df_sorted.columns)
-        
-        # Create a mask to identify non-last execution records
-        non_last_mask = []
-        for row in exec_records.iter_rows():
-            etm_val = row[exec_records.columns.index('eTm')]
-            timestamp_val = row[exec_records.columns.index('timestamp')]
-            non_last_mask.append((etm_val, timestamp_val) not in last_matches)
-        
-        # Use Polars operations to convert non-last records to market-only
-        non_last_exec_records = exec_records.filter(pl.Series(non_last_mask))
+        # Identify non-last execution records more efficiently
+        # Create a unique identifier for (eTm, timestamp) in last_exec_records
+        last_matches_identifier = last_exec_records.with_columns(
+            (pl.col('eTm').cast(pl.Utf8) + '_' + pl.col('timestamp').cast(pl.Utf8)).alias('join_id')
+        ).select('join_id')
+
+        # Create the same identifier for exec_records
+        exec_records_with_id = exec_records.with_columns(
+            (pl.col('eTm').cast(pl.Utf8) + '_' + pl.col('timestamp').cast(pl.Utf8)).alias('join_id')
+        )
+
+        # Use anti-join to find non-last execution records
+        non_last_exec_records = exec_records_with_id.join(
+            last_matches_identifier,
+            on='join_id',
+            how='anti'
+        ).drop('join_id') # Drop the temporary join_id column
         
         print(f"Converting {len(non_last_exec_records)} non-last execution matches to market-only records")
         
         # Set execution columns to null for non-last records
         if len(non_last_exec_records) > 0:
+            # Identify execution columns
+            # Get a list of columns from exec_df_sorted that are not in market_df_sorted (pure exec cols)
+            # We need to make sure 'eTm_microseconds' is considered, even if it's derived.
+            # Also, 'timestamp' from market data should not be nulled out.
+            # Let's rebuild the exec_cols list more robustly
+            exec_base_cols = set(exec_df_sorted.columns) - set(market_df_sorted.columns)
+            # Ensure eTm and eTm_microseconds are always in exec_base_cols if they exist
+            if 'eTm' in exec_df_sorted.columns: exec_base_cols.add('eTm')
+            if 'eTm_microseconds' in exec_df_sorted.columns: exec_base_cols.add('eTm_microseconds')
+
+            # Filter exec_cols to only include those present in non_last_exec_records
+            exec_cols_to_null = [col for col in exec_base_cols if col in non_last_exec_records.columns]
+
             # Create expressions to set execution columns to null
-            null_exprs = []
-            for col in exec_cols:
-                if col in non_last_exec_records.columns:
-                    null_exprs.append(pl.lit(None).alias(col))
-                    
-            # Keep non-execution columns as they are
-            keep_exprs = []
-            for col in non_last_exec_records.columns:
-                if col not in exec_cols:
-                    keep_exprs.append(pl.col(col))
-            
+            null_exprs = [pl.lit(None).alias(col) for col in exec_cols_to_null]
+
             # Apply the transformations
-            non_last_market_only = non_last_exec_records.with_columns(null_exprs + keep_exprs)
+            non_last_market_only = non_last_exec_records.with_columns(null_exprs)
             
             # Ensure column order matches the expected schema
             target_columns = merged_df.columns
@@ -401,9 +400,15 @@ def prepare_symbol_data(exec_file='exec.csv', market_data_dir='data', symbol='BT
     total_start_time = time.time()
     
     try:
+        # Define paths for JSON and CSV
+        exec_json_file_path = Path(market_data_dir) / 'exec.json'
+        exec_csv_file_path = Path(market_data_dir) / exec_file
+
+        # Convert exec.json to exec.csv if exec.csv does not exist
+        convert_json_to_csv_if_not_exists(exec_json_file_path, exec_csv_file_path)
+
         # 1. Load data
-        exec_file_path = Path(market_data_dir) / exec_file
-        exec_df = load_exec_data(exec_file_path)
+        exec_df = load_exec_data(exec_csv_file_path)
         
         # Find symbol market data file
         market_file = find_market_data_file(market_data_dir, symbol)
@@ -473,4 +478,40 @@ def save_to_parquet(df, output_path):
     
     df.write_parquet(output_path)
     save_time = time.time() - start_time
-    print(f"Data saved to {output_path} in {save_time:.2f} seconds") 
+    print(f"Data saved to {output_path} in {save_time:.2f} seconds")
+
+def convert_json_to_csv_if_not_exists(json_file_path: Path, csv_file_path: Path):
+    """
+    Converts a CSV-like JSON file to CSV format if the CSV file does not already exist.
+    This function is specifically designed for cases where the 'JSON' file is actually
+    a CSV file with a .json extension or a malformed JSON that resembles CSV.
+
+    Args:
+        json_file_path: Path to the input CSV-like JSON file.
+        csv_file_path: Path to the output CSV file.
+    """
+    print(f"Checking for existing CSV file at: {csv_file_path}")
+    if csv_file_path.exists():
+        print(f"CSV file already exists at {csv_file_path}. Skipping conversion.")
+        return
+
+    print(f"CSV file not found. Attempting to convert {json_file_path} (treating as CSV) to {csv_file_path}...")
+    start_time = time.time()
+    try:
+        print(f"Reading CSV-like data from {json_file_path}...")
+        # Load CSV data using Polars, assuming it's a CSV with a .json extension
+        df = pl.read_csv(json_file_path)
+        print(f"Successfully read {len(df)} records from {json_file_path}. Ensuring output directory exists...")
+        
+        # Ensure output directory exists for the CSV file
+        csv_file_path.parent.mkdir(parents=True, exist_ok=True)
+        print(f"Saving DataFrame to CSV at {csv_file_path}...")
+        
+        # Save as CSV
+        df.write_csv(csv_file_path)
+        
+        conversion_time = time.time() - start_time
+        print(f"Successfully converted {json_file_path} to {csv_file_path} in {conversion_time:.2f} seconds.")
+    except Exception as e:
+        print(f"Error converting {json_file_path} to CSV: {e}")
+        print("Conversion failed. Please ensure the JSON file is correctly formatted or is a CSV-like file.") 

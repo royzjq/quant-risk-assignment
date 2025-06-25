@@ -189,47 +189,85 @@ def create_bidask_spread_distribution(market_data, execution_data, output_dir='r
         (pl.col('askPrice-1') - pl.col('bidPrice-1')).alias('bidask_spread')
     ]).filter(pl.col('bidask_spread') > 0)
     
+    # Separate market data and execution data
+    market_data_spreads = df_with_bidask_spread.filter(pl.col('eTm').is_null())
+    execution_data_spreads = df_with_bidask_spread.filter(pl.col('eTm').is_not_null())
+    
     # Convert to numpy for histogram
-    bidask_spread_data = df_with_bidask_spread['bidask_spread'].to_numpy()
+    market_bidask_spread_data = market_data_spreads['bidask_spread'].to_numpy()
+    exec_bidask_spread_data = execution_data_spreads['bidask_spread'].to_numpy()
     
-    # Create custom bins: 30 bins from 0 to 0.3, plus one bin for >0.3
+    # Use all data to determine the percentile range
+    all_bidask_spread_data = df_with_bidask_spread['bidask_spread'].to_numpy()
+    
+    # Create custom bins using 99% percentile as upper bound for visualization
     num_fine_bins = 30
-    fine_bin_upper_bound = 0.3
-    fine_bin_edges = np.linspace(0, fine_bin_upper_bound, num_fine_bins + 1)
+    min_spread = np.min(all_bidask_spread_data)
+    percentile_99 = np.percentile(all_bidask_spread_data, 99)
     
-    # Get the maximum spread from the full dataset
-    max_actual_spread = np.max(bidask_spread_data)
+    # Create bin edges from min to 99% percentile
+    fine_bin_edges = np.linspace(min_spread, percentile_99, num_fine_bins + 1)
     
-    # Create the complete bin edges for data analysis
-    if max_actual_spread > fine_bin_upper_bound:
-        bin_edges = np.concatenate([fine_bin_edges, [max_actual_spread]])
-    else:
-        bin_edges = fine_bin_edges
+    # For visualization, cap values at 99% percentile
+    market_spread_for_plot = np.clip(market_bidask_spread_data, min_spread, percentile_99)
+    exec_spread_for_plot = np.clip(exec_bidask_spread_data, min_spread, percentile_99)
     
-    # Calculate histogram counts
-    counts, _ = np.histogram(bidask_spread_data, bins=bin_edges)
+    # Calculate histogram counts using the capped data for plotting
+    market_counts, _ = np.histogram(market_spread_for_plot, bins=fine_bin_edges)
+    exec_counts, _ = np.histogram(exec_spread_for_plot, bins=fine_bin_edges)
     
     # Bin centers for plotting
-    bin_centers = (bin_edges[:-1] + bin_edges[1:]) / 2
+    bin_centers = (fine_bin_edges[:-1] + fine_bin_edges[1:]) / 2
     
-    # Create histogram plot
-    fig = go.Figure()
+    # Count how many values were capped at the 99% percentile
+    market_capped_count = np.sum(market_bidask_spread_data > percentile_99)
+    exec_capped_count = np.sum(exec_bidask_spread_data > percentile_99)
     
-    fig.add_trace(go.Bar(
-        x=bin_centers,
-        y=counts,
-        name='Bid-Ask Spread Distribution',
-        marker_color='lightblue',
-        opacity=0.7
-    ))
+    print(f"Market data: {len(market_bidask_spread_data)} records, {market_capped_count} ({market_capped_count/len(market_bidask_spread_data)*100:.1f}%) exceed 99% percentile")
+    print(f"Execution data: {len(exec_bidask_spread_data)} records, {exec_capped_count} ({exec_capped_count/len(exec_bidask_spread_data)*100:.1f}%) exceed 99% percentile")
+    print(f"99% percentile value: {percentile_99:.6f}")
+    
+    # Create histogram plot with dual y-axes
+    fig = make_subplots(specs=[[{"secondary_y": True}]])
+    
+    # Add market data distribution (bar chart)
+    fig.add_trace(
+        go.Bar(
+            x=bin_centers,
+            y=market_counts,
+            name='Market Data Count',
+            marker_color='lightblue',
+            opacity=0.7,
+            yaxis='y'
+        ),
+        secondary_y=False,
+    )
+    
+    # Add execution data distribution (line chart)
+    fig.add_trace(
+        go.Scatter(
+            x=bin_centers,
+            y=exec_counts,
+            mode='lines+markers',
+            name='Execution Count',
+            line=dict(color='red', width=3),
+            marker=dict(size=6, color='red'),
+            yaxis='y2'
+        ),
+        secondary_y=True,
+    )
     
     # Update layout
     fig.update_layout(
-        title=f'{symbol} Bid-Ask Spread Distribution',
+        title=f'{symbol} Bid-Ask Spread Distribution: Market vs Execution',
         xaxis_title='Bid-Ask Spread (USDT)',
-        yaxis_title='Frequency',
-        template='plotly_white'
+        template='plotly_white',
+        legend=dict(x=0.7, y=0.95)
     )
+    
+    # Set y-axes titles
+    fig.update_yaxes(title_text="Market Data Frequency", secondary_y=False)
+    fig.update_yaxes(title_text="Execution Count", secondary_y=True)
     
     # Save the plot with symbol prefix
     symbol_lower = symbol.lower()
