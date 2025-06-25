@@ -1,0 +1,181 @@
+{
+    "eqty violation (sde=1, eqty > askVol-1) - potential market impact (1)": [
+        1658776061077000
+    ],
+    "vwap violation (sde=1, vwap > askPrice-1) - potential market impact (1)": [
+        1658776060400000,
+        1658776060445000
+    ],
+    "significant_market_impacts_1s": {
+        "1658733419327000": {
+            "execution_time_ms": 1658733419327,
+            "side": "SELL",
+            "quantity": 111.7,
+            "vwap": 1.155,
+            "price_impact_1s": 0.001000000000000112,
+            "spread_impact_1s": -0.001000000000000112,
+            "price_impact_sigma": 0.0816940444808646,
+            "spread_impact_sigma": -22.819642995505095
+        },
+        "1658747104080000": {
+            "execution_time_ms": 1658747104080,
+            "side": "SELL",
+            "quantity": 107.1,
+            "vwap": 1.173,
+            "price_impact_1s": 0.0,
+            "spread_impact_1s": 0.0009999999999998899,
+            "price_impact_sigma": 0.0,
+            "spread_impact_sigma": 22.81964299550003
+        },
+        "1658758061721000": {
+            "execution_time_ms": 1658758061721,
+            "side": "SELL",
+            "quantity": 156.3,
+            "vwap": 1.16,
+            "price_impact_1s": 0.0009999999999998899,
+            "spread_impact_1s": 0.001000000000000112,
+            "price_impact_sigma": 0.08169404448084645,
+            "spread_impact_sigma": 22.819642995505095
+        },
+        "1658776049757000": {
+            "execution_time_ms": 1658776049757,
+            "side": "BUY",
+            "quantity": 175.7,
+            "vwap": 1.145,
+            "price_impact_1s": 0.0,
+            "spread_impact_1s": 0.001000000000000112,
+            "price_impact_sigma": 0.0,
+            "spread_impact_sigma": 22.819642995505095
+        },
+        "1658777562459000": {
+            "execution_time_ms": 1658777562459,
+            "side": "BUY",
+            "quantity": 337.9,
+            "vwap": 1.1320000000000001,
+            "price_impact_1s": 0.0,
+            "spread_impact_1s": 0.0009999999999998899,
+            "price_impact_sigma": 0.0,
+            "spread_impact_sigma": 22.81964299550003
+        },
+        "1658777564807000": {
+            "execution_time_ms": 1658777564807,
+            "side": "BUY",
+            "quantity": 348.5,
+            "vwap": 1.131,
+            "price_impact_1s": -0.0009999999999998899,
+            "spread_impact_1s": 0.001000000000000112,
+            "price_impact_sigma": -0.08170005435703745,
+            "spread_impact_sigma": 22.819642995505095
+        },
+        "1658777566432000": {
+            "execution_time_ms": 1658777566432,
+            "side": "BUY",
+            "quantity": 217.4,
+            "vwap": 1.1280000000000001,
+            "price_impact_1s": -0.001000000000000112,
+            "spread_impact_1s": -0.001000000000000112,
+            "price_impact_sigma": -0.08170005435705559,
+            "spread_impact_sigma": -22.819642995505095
+        },
+        "1658777573056000": {
+            "execution_time_ms": 1658777573056,
+            "side": "BUY",
+            "quantity": 94.9,
+            "vwap": 1.126,
+            "price_impact_1s": 0.0,
+            "spread_impact_1s": -0.0009999999999998899,
+            "price_impact_sigma": 0.0,
+            "spread_impact_sigma": -22.81964299550003
+        },
+        "1658788373634000": {
+            "execution_time_ms": 1658788373634,
+            "side": "SELL",
+            "quantity": 83.2,
+            "vwap": 1.142,
+            "price_impact_1s": 0.0009999999999998899,
+            "spread_impact_1s": 0.001000000000000112,
+            "price_impact_sigma": 0.08169404448084645,
+            "spread_impact_sigma": 22.819642995505095
+        },
+        "1658788373637000": {
+            "execution_time_ms": 1658788373637,
+            "side": "SELL",
+            "quantity": 20.0,
+            "vwap": 1.142,
+            "price_impact_1s": 0.0009999999999998899,
+            "spread_impact_1s": 0.001000000000000112,
+            "price_impact_sigma": 0.08169404448084645,
+            "spread_impact_sigma": 22.819642995505095
+        },
+        "1658789341228000": {
+            "execution_time_ms": 1658789341228,
+            "side": "SELL",
+            "quantity": 147.6,
+            "vwap": 1.147,
+            "price_impact_1s": 0.0,
+            "spread_impact_1s": 0.0009999999999998899,
+            "price_impact_sigma": 0.0,
+            "spread_impact_sigma": 22.81964299550003
+        },
+        "1658790299622000": {
+            "execution_time_ms": 1658790299622,
+            "side": "SELL",
+            "quantity": 562.1,
+            "vwap": 1.145,
+            "price_impact_1s": 0.001000000000000112,
+            "spread_impact_1s": -0.001000000000000112,
+            "price_impact_sigma": 0.0816940444808646,
+            "spread_impact_sigma": -22.819642995505095
+        },
+        "1658791979053000": {
+            "execution_time_ms": 1658791979053,
+            "side": "BUY",
+            "quantity": 44.3,
+            "vwap": 1.138,
+            "price_impact_1s": -0.001000000000000112,
+            "spread_impact_1s": -0.001000000000000112,
+            "price_impact_sigma": -0.08170005435705559,
+            "spread_impact_sigma": -22.819642995505095
+        },
+        "1658792284560000": {
+            "execution_time_ms": 1658792284560,
+            "side": "BUY",
+            "quantity": 102.0,
+            "vwap": 1.137,
+            "price_impact_1s": 0.0,
+            "spread_impact_1s": 0.001000000000000112,
+            "price_impact_sigma": 0.0,
+            "spread_impact_sigma": 22.819642995505095
+        },
+        "1658792954171000": {
+            "execution_time_ms": 1658792954171,
+            "side": "BUY",
+            "quantity": 117.2,
+            "vwap": 1.124,
+            "price_impact_1s": 0.0,
+            "spread_impact_1s": 0.001000000000000112,
+            "price_impact_sigma": 0.0,
+            "spread_impact_sigma": 22.819642995505095
+        },
+        "1658792969641000": {
+            "execution_time_ms": 1658792969641,
+            "side": "BUY",
+            "quantity": 131.0,
+            "vwap": 1.118,
+            "price_impact_1s": 0.0,
+            "spread_impact_1s": 0.001000000000000112,
+            "price_impact_sigma": 0.0,
+            "spread_impact_sigma": 22.819642995505095
+        },
+        "1658792972766000": {
+            "execution_time_ms": 1658792972766,
+            "side": "BUY",
+            "quantity": 106.5,
+            "vwap": 1.115,
+            "price_impact_1s": -0.0029999999999998916,
+            "spread_impact_1s": -0.0009999999999998899,
+            "price_impact_sigma": -0.24510016307113047,
+            "spread_impact_sigma": -22.81964299550003
+        }
+    }
+}

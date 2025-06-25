@@ -1,0 +1,698 @@
+{
+  "symbol": "ETHUSDT",
+  "analysis_type": "strategy_processing_latency_outliers",
+  "threshold_sigma": 2.5,
+  "total_outliers": 69,
+  "outliers": [
+    {
+      "index": 0,
+      "latency_value": 63000.0,
+      "z_score": 3.8779150187308207,
+      "exec_id": null,
+      "exec_datetime": "",
+      "side": 1,
+      "quantity": 0.08,
+      "price": 1563.66
+    },
+    {
+      "index": 1,
+      "latency_value": 49000.0,
+      "z_score": 2.7278827245107995,
+      "exec_id": null,
+      "exec_datetime": "",
+      "side": 1,
+      "quantity": 0.063,
+      "price": 1559.77
+    },
+    {
+      "index": 2,
+      "latency_value": 85000.0,
+      "z_score": 5.685108623933711,
+      "exec_id": null,
+      "exec_datetime": "",
+      "side": 1,
+      "quantity": 0.096,
+      "price": 1559.85
+    },
+    {
+      "index": 3,
+      "latency_value": 48000.0,
+      "z_score": 2.645737560637941,
+      "exec_id": null,
+      "exec_datetime": "",
+      "side": 1,
+      "quantity": 0.098,
+      "price": 1553.98
+    },
+    {
+      "index": 4,
+      "latency_value": 66000.0,
+      "z_score": 4.124350510349397,
+      "exec_id": null,
+      "exec_datetime": "",
+      "side": 1,
+      "quantity": 0.076,
+      "price": 1551.27
+    },
+    {
+      "index": 5,
+      "latency_value": 50000.0,
+      "z_score": 2.8100278883836585,
+      "exec_id": null,
+      "exec_datetime": "",
+      "side": 1,
+      "quantity": 0.004,
+      "price": 1523.16
+    },
+    {
+      "index": 6,
+      "latency_value": 50000.0,
+      "z_score": 2.8100278883836585,
+      "exec_id": null,
+      "exec_datetime": "",
+      "side": 1,
+      "quantity": 0.001,
+      "price": 1522.52
+    },
+    {
+      "index": 7,
+      "latency_value": 47000.0,
+      "z_score": 2.5635923967650824,
+      "exec_id": null,
+      "exec_datetime": "",
+      "side": 1,
+      "quantity": 0.067,
+      "price": 1520.56
+    },
+    {
+      "index": 8,
+      "latency_value": 47000.0,
+      "z_score": 2.5635923967650824,
+      "exec_id": null,
+      "exec_datetime": "",
+      "side": 1,
+      "quantity": 0.08,
+      "price": 1522.87
+    },
+    {
+      "index": 9,
+      "latency_value": 51000.0,
+      "z_score": 2.892173052256517,
+      "exec_id": null,
+      "exec_datetime": "",
+      "side": 1,
+      "quantity": 0.063,
+      "price": 1523.37
+    },
+    {
+      "index": 10,
+      "latency_value": 48000.0,
+      "z_score": 2.645737560637941,
+      "exec_id": null,
+      "exec_datetime": "",
+      "side": 1,
+      "quantity": 0.063,
+      "price": 1522.48
+    },
+    {
+      "index": 11,
+      "latency_value": 49000.0,
+      "z_score": 2.7278827245107995,
+      "exec_id": null,
+      "exec_datetime": "",
+      "side": 1,
+      "quantity": 0.004,
+      "price": 1519.57
+    },
+    {
+      "index": 12,
+      "latency_value": 72000.0,
+      "z_score": 4.617221493586548,
+      "exec_id": null,
+      "exec_datetime": "",
+      "side": 1,
+      "quantity": 0.07,
+      "price": 1522.72
+    },
+    {
+      "index": 13,
+      "latency_value": 48000.0,
+      "z_score": 2.645737560637941,
+      "exec_id": null,
+      "exec_datetime": "",
+      "side": 1,
+      "quantity": 0.005,
+      "price": 1524.15
+    },
+    {
+      "index": 14,
+      "latency_value": 47000.0,
+      "z_score": 2.5635923967650824,
+      "exec_id": null,
+      "exec_datetime": "",
+      "side": 1,
+      "quantity": 0.131,
+      "price": 1520.6
+    },
+    {
+      "index": 15,
+      "latency_value": 48000.0,
+      "z_score": 2.645737560637941,
+      "exec_id": null,
+      "exec_datetime": "",
+      "side": 1,
+      "quantity": 0.069,
+      "price": 1514.06
+    },
+    {
+      "index": 16,
+      "latency_value": 47000.0,
+      "z_score": 2.5635923967650824,
+      "exec_id": null,
+      "exec_datetime": "",
+      "side": 1,
+      "quantity": 0.08600000000000001,
+      "price": 1509.75
+    },
+    {
+      "index": 17,
+      "latency_value": 48000.0,
+      "z_score": 2.645737560637941,
+      "exec_id": null,
+      "exec_datetime": "",
+      "side": 1,
+      "quantity": 0.063,
+      "price": 1505.58
+    },
+    {
+      "index": 18,
+      "latency_value": 49000.0,
+      "z_score": 2.7278827245107995,
+      "exec_id": null,
+      "exec_datetime": "",
+      "side": 2,
+      "quantity": 0.096,
+      "price": 1514.7
+    },
+    {
+      "index": 19,
+      "latency_value": 48000.0,
+      "z_score": 2.645737560637941,
+      "exec_id": null,
+      "exec_datetime": "",
+      "side": 1,
+      "quantity": 0.061,
+      "price": 1520.65
+    },
+    {
+      "index": 20,
+      "latency_value": 114000.0,
+      "z_score": 8.067318376246613,
+      "exec_id": null,
+      "exec_datetime": "",
+      "side": 1,
+      "quantity": 0.068,
+      "price": 1520.82
+    },
+    {
+      "index": 21,
+      "latency_value": 51000.0,
+      "z_score": 2.892173052256517,
+      "exec_id": null,
+      "exec_datetime": "",
+      "side": 2,
+      "quantity": 0.068,
+      "price": 1524.01
+    },
+    {
+      "index": 22,
+      "latency_value": 50000.0,
+      "z_score": 2.8100278883836585,
+      "exec_id": null,
+      "exec_datetime": "",
+      "side": 1,
+      "quantity": 0.061,
+      "price": 1519.77
+    },
+    {
+      "index": 23,
+      "latency_value": 63000.0,
+      "z_score": 3.8779150187308207,
+      "exec_id": null,
+      "exec_datetime": "",
+      "side": 1,
+      "quantity": 0.069,
+      "price": 1513.83
+    },
+    {
+      "index": 24,
+      "latency_value": 49000.0,
+      "z_score": 2.7278827245107995,
+      "exec_id": null,
+      "exec_datetime": "",
+      "side": 2,
+      "quantity": 0.067,
+      "price": 1534.78
+    },
+    {
+      "index": 25,
+      "latency_value": 56000.0,
+      "z_score": 3.30289887162081,
+      "exec_id": null,
+      "exec_datetime": "",
+      "side": 2,
+      "quantity": 0.14300000000000002,
+      "price": 1535.24
+    },
+    {
+      "index": 26,
+      "latency_value": 66000.0,
+      "z_score": 4.124350510349397,
+      "exec_id": null,
+      "exec_datetime": "",
+      "side": 2,
+      "quantity": 0.08700000000000001,
+      "price": 1535.69
+    },
+    {
+      "index": 27,
+      "latency_value": 65000.0,
+      "z_score": 4.042205346476538,
+      "exec_id": null,
+      "exec_datetime": "",
+      "side": 2,
+      "quantity": 0.079,
+      "price": 1537.05
+    },
+    {
+      "index": 28,
+      "latency_value": 63000.0,
+      "z_score": 3.8779150187308207,
+      "exec_id": null,
+      "exec_datetime": "",
+      "side": 2,
+      "quantity": 0.088,
+      "price": 1536.94
+    },
+    {
+      "index": 29,
+      "latency_value": 101000.0,
+      "z_score": 6.99943124589945,
+      "exec_id": null,
+      "exec_datetime": "",
+      "side": 2,
+      "quantity": 0.07,
+      "price": 1535.16
+    },
+    {
+      "index": 30,
+      "latency_value": 81000.0,
+      "z_score": 5.356527968442276,
+      "exec_id": null,
+      "exec_datetime": "",
+      "side": 2,
+      "quantity": 0.021,
+      "price": 1534.45
+    },
+    {
+      "index": 31,
+      "latency_value": 114000.0,
+      "z_score": 8.067318376246613,
+      "exec_id": null,
+      "exec_datetime": "",
+      "side": 2,
+      "quantity": 0.122,
+      "price": 1534.92
+    },
+    {
+      "index": 32,
+      "latency_value": 81000.0,
+      "z_score": 5.356527968442276,
+      "exec_id": null,
+      "exec_datetime": "",
+      "side": 1,
+      "quantity": 0.105,
+      "price": 1534.45
+    },
+    {
+      "index": 33,
+      "latency_value": 57000.0,
+      "z_score": 3.385044035493669,
+      "exec_id": null,
+      "exec_datetime": "",
+      "side": 2,
+      "quantity": 0.064,
+      "price": 1545.01
+    },
+    {
+      "index": 34,
+      "latency_value": 48000.0,
+      "z_score": 2.645737560637941,
+      "exec_id": null,
+      "exec_datetime": "",
+      "side": 1,
+      "quantity": 0.063,
+      "price": 1528.65
+    },
+    {
+      "index": 35,
+      "latency_value": 50000.0,
+      "z_score": 2.8100278883836585,
+      "exec_id": null,
+      "exec_datetime": "",
+      "side": 1,
+      "quantity": 0.08600000000000001,
+      "price": 1524.44
+    },
+    {
+      "index": 36,
+      "latency_value": 48000.0,
+      "z_score": 2.645737560637941,
+      "exec_id": null,
+      "exec_datetime": "",
+      "side": 1,
+      "quantity": 0.004,
+      "price": 1518.99
+    },
+    {
+      "index": 37,
+      "latency_value": 51000.0,
+      "z_score": 2.892173052256517,
+      "exec_id": null,
+      "exec_datetime": "",
+      "side": 2,
+      "quantity": 0.081,
+      "price": 1534.84
+    },
+    {
+      "index": 38,
+      "latency_value": 56000.0,
+      "z_score": 3.30289887162081,
+      "exec_id": null,
+      "exec_datetime": "",
+      "side": 2,
+      "quantity": 0.066,
+      "price": 1534.85
+    },
+    {
+      "index": 39,
+      "latency_value": 84000.0,
+      "z_score": 5.602963460060853,
+      "exec_id": null,
+      "exec_datetime": "",
+      "side": 2,
+      "quantity": 0.004,
+      "price": 1534.74
+    },
+    {
+      "index": 40,
+      "latency_value": 50000.0,
+      "z_score": 2.8100278883836585,
+      "exec_id": null,
+      "exec_datetime": "",
+      "side": 1,
+      "quantity": 0.065,
+      "price": 1522.18
+    },
+    {
+      "index": 41,
+      "latency_value": 90000.0,
+      "z_score": 6.0958344432980045,
+      "exec_id": null,
+      "exec_datetime": "",
+      "side": 1,
+      "quantity": 0.062,
+      "price": 1507.25
+    },
+    {
+      "index": 42,
+      "latency_value": 47000.0,
+      "z_score": 2.5635923967650824,
+      "exec_id": null,
+      "exec_datetime": "",
+      "side": 1,
+      "quantity": 0.095,
+      "price": 1510.4
+    },
+    {
+      "index": 43,
+      "latency_value": 51000.0,
+      "z_score": 2.892173052256517,
+      "exec_id": null,
+      "exec_datetime": "",
+      "side": 1,
+      "quantity": 0.065,
+      "price": 1522.94
+    },
+    {
+      "index": 44,
+      "latency_value": 50000.0,
+      "z_score": 2.8100278883836585,
+      "exec_id": null,
+      "exec_datetime": "",
+      "side": 1,
+      "quantity": 0.078,
+      "price": 1523.22
+    },
+    {
+      "index": 45,
+      "latency_value": 47000.0,
+      "z_score": 2.5635923967650824,
+      "exec_id": null,
+      "exec_datetime": "",
+      "side": 1,
+      "quantity": 0.074,
+      "price": 1520.82
+    },
+    {
+      "index": 46,
+      "latency_value": 48000.0,
+      "z_score": 2.645737560637941,
+      "exec_id": null,
+      "exec_datetime": "",
+      "side": 1,
+      "quantity": 0.062,
+      "price": 1511.33
+    },
+    {
+      "index": 47,
+      "latency_value": 48000.0,
+      "z_score": 2.645737560637941,
+      "exec_id": null,
+      "exec_datetime": "",
+      "side": 1,
+      "quantity": 0.097,
+      "price": 1516.35
+    },
+    {
+      "index": 48,
+      "latency_value": 66000.0,
+      "z_score": 4.124350510349397,
+      "exec_id": null,
+      "exec_datetime": "",
+      "side": 2,
+      "quantity": 0.067,
+      "price": 1516.24
+    },
+    {
+      "index": 49,
+      "latency_value": 71000.0,
+      "z_score": 4.53507632971369,
+      "exec_id": null,
+      "exec_datetime": "",
+      "side": 2,
+      "quantity": 0.082,
+      "price": 1525.27
+    },
+    {
+      "index": 50,
+      "latency_value": 63000.0,
+      "z_score": 3.8779150187308207,
+      "exec_id": null,
+      "exec_datetime": "",
+      "side": 1,
+      "quantity": 0.101,
+      "price": 1519.22
+    },
+    {
+      "index": 51,
+      "latency_value": 57000.0,
+      "z_score": 3.385044035493669,
+      "exec_id": null,
+      "exec_datetime": "",
+      "side": 1,
+      "quantity": 0.07200000000000001,
+      "price": 1518.35
+    },
+    {
+      "index": 52,
+      "latency_value": 63000.0,
+      "z_score": 3.8779150187308207,
+      "exec_id": null,
+      "exec_datetime": "",
+      "side": 1,
+      "quantity": 0.003,
+      "price": 1517.05
+    },
+    {
+      "index": 53,
+      "latency_value": 61000.0,
+      "z_score": 3.7136246909851036,
+      "exec_id": null,
+      "exec_datetime": "",
+      "side": 1,
+      "quantity": 0.066,
+      "price": 1526.69
+    },
+    {
+      "index": 54,
+      "latency_value": 71000.0,
+      "z_score": 4.53507632971369,
+      "exec_id": null,
+      "exec_datetime": "",
+      "side": 1,
+      "quantity": 0.11800000000000001,
+      "price": 1517.79
+    },
+    {
+      "index": 55,
+      "latency_value": 66000.0,
+      "z_score": 4.124350510349397,
+      "exec_id": null,
+      "exec_datetime": "",
+      "side": 1,
+      "quantity": 0.061,
+      "price": 1516.49
+    },
+    {
+      "index": 56,
+      "latency_value": 58000.0,
+      "z_score": 3.4671891993665276,
+      "exec_id": null,
+      "exec_datetime": "",
+      "side": 1,
+      "quantity": 0.062,
+      "price": 1516.43
+    },
+    {
+      "index": 57,
+      "latency_value": 47000.0,
+      "z_score": 2.5635923967650824,
+      "exec_id": null,
+      "exec_datetime": "",
+      "side": 1,
+      "quantity": 0.069,
+      "price": 1479.4
+    },
+    {
+      "index": 58,
+      "latency_value": 47000.0,
+      "z_score": 2.5635923967650824,
+      "exec_id": null,
+      "exec_datetime": "",
+      "side": 2,
+      "quantity": 0.065,
+      "price": 1489.88
+    },
+    {
+      "index": 59,
+      "latency_value": 50000.0,
+      "z_score": 2.8100278883836585,
+      "exec_id": null,
+      "exec_datetime": "",
+      "side": 2,
+      "quantity": 0.062,
+      "price": 1502.85
+    },
+    {
+      "index": 60,
+      "latency_value": 49000.0,
+      "z_score": 2.7278827245107995,
+      "exec_id": null,
+      "exec_datetime": "",
+      "side": 2,
+      "quantity": 0.067,
+      "price": 1504.96
+    },
+    {
+      "index": 61,
+      "latency_value": 48000.0,
+      "z_score": 2.645737560637941,
+      "exec_id": null,
+      "exec_datetime": "",
+      "side": 2,
+      "quantity": 0.063,
+      "price": 1516.23
+    },
+    {
+      "index": 62,
+      "latency_value": 65000.0,
+      "z_score": 4.042205346476538,
+      "exec_id": null,
+      "exec_datetime": "",
+      "side": 2,
+      "quantity": 0.063,
+      "price": 1517.73
+    },
+    {
+      "index": 63,
+      "latency_value": 49000.0,
+      "z_score": 2.7278827245107995,
+      "exec_id": null,
+      "exec_datetime": "",
+      "side": 2,
+      "quantity": 0.062,
+      "price": 1535.26
+    },
+    {
+      "index": 64,
+      "latency_value": 47000.0,
+      "z_score": 2.5635923967650824,
+      "exec_id": null,
+      "exec_datetime": "",
+      "side": 2,
+      "quantity": 0.074,
+      "price": 1530.86
+    },
+    {
+      "index": 65,
+      "latency_value": 63000.0,
+      "z_score": 3.8779150187308207,
+      "exec_id": null,
+      "exec_datetime": "",
+      "side": 2,
+      "quantity": 0.043000000000000003,
+      "price": 1519.98
+    },
+    {
+      "index": 66,
+      "latency_value": 59000.0,
+      "z_score": 3.549334363239386,
+      "exec_id": null,
+      "exec_datetime": "",
+      "side": 2,
+      "quantity": 0.062,
+      "price": 1520.03
+    },
+    {
+      "index": 67,
+      "latency_value": 48000.0,
+      "z_score": 2.645737560637941,
+      "exec_id": null,
+      "exec_datetime": "",
+      "side": 1,
+      "quantity": 0.066,
+      "price": 1469.58
+    },
+    {
+      "index": 68,
+      "latency_value": 47000.0,
+      "z_score": 2.5635923967650824,
+      "exec_id": null,
+      "exec_datetime": "",
+      "side": 1,
+      "quantity": 0.069,
+      "price": 1469.04
+    }
+  ]
+}

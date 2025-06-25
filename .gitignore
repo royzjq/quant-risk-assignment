@@ -1,7 +1,7 @@
 "" 
 *.parquet
 *.csv 
-*.png
+*.html
 *.pdf
 *.jpg
 *.jpeg

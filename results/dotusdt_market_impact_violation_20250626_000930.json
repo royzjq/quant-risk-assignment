@@ -270,8 +270,8 @@
         "1658709520947000": {
             "execution_time_ms": 1658709520947,
             "side": "BUY",
-            "quantity": 11.2,
-            "vwap": 7.188,
+            "quantity": 9.3,
+            "vwap": 7.189,
             "price_impact_1s": -0.0039999999999995595,
             "spread_impact_1s": -0.0009999999999994458,
             "price_impact_sigma": -0.0447089899925066,
