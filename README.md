@@ -28,7 +28,6 @@ The framework performs comprehensive data quality checks before analysis:
 - **Value Range Checks**: Validates that prices, quantities, and fees fall within expected ranges
 - **Business Logic Validation**: Checks consistency between order quantities, executed quantities, and remaining quantities
 - **Event Type Verification**: Ensures execution events match expected trading event types
-- **Exchange Validation**: Confirms all records originate from expected exchanges
 
 ### 2. Data Preparation & Integration
 Addresses the challenge of matching execution data with market data:
@@ -41,17 +40,18 @@ Addresses the challenge of matching execution data with market data:
 ### 3. Analysis Modules
 
 #### Market Impact Analysis
-**Logic**: Detects potential market manipulation or significant market impact violations
-- **Quantity Violations**: Identifies executions exceeding available market depth (bid/ask volumes)
-- **Price Violations**: Detects VWAP prices that breach bid/ask price boundaries
-- **Statistical Significance**: Only flags impacts exceeding 1.5 sigma thresholds to reduce false positives
-- **Side-Specific Logic**: Applies different validation rules for buy vs sell orders
+**Logic**: Checks if executions violate market depth or price boundaries using specific rules:
+- **Buy Side (sde=1)**: `eqty > askVol-1` or `vwap > askPrice-1` indicates potential market impact
+- **Sell Side (sde=2)**: `eqty > bidVol-1` or `vwap < bidPrice-1` indicates potential market impact
+- **1s Price Impact**: Measures actual price movement 1 second after execution, only flags impacts > 1.5σ
+- **Timestamp Export**: Saves violation timestamps to JSON for further investigation
 
 #### Slippage Analysis
-**Logic**: Measures execution efficiency relative to mid-market prices
-- **Side-Aware Calculation**: Buy orders: `slippage = vwap - mid_price`, Sell orders: `slippage = mid_price - vwap`
-- **Basis Points Conversion**: Normalizes slippage as percentage of mid price for comparability
-- **Correlation Analysis**: Examines relationships between slippage and order size, market volatility, liquidity
+**Logic**: Examines if slippage correlates with market conditions
+- **Slippage Calculation**: Buy: `slippage = vwap - mid_price`, Sell: `slippage = mid_price - vwap` (in basis points)
+- **Order Size Correlation**: Plots slippage vs execution quantity to see if larger orders have worse slippage
+- **Volatility Correlation**: Checks if slippage increases during high volatility periods
+- **Liquidity Impact**: Analyzes if low liquidity (bid/ask volumes) leads to higher slippage
 
 #### Latency Analysis
 **Logic**: Analyzes time delays in order processing and execution
@@ -60,35 +60,23 @@ Addresses the challenge of matching execution data with market data:
 - **Distribution Analysis**: Provides percentile-based latency metrics
 
 #### Fee Analysis
-**Logic**: Comprehensive trading cost analysis
-- **Fee Structure Validation**: Ensures fees follow expected patterns (typically negative values representing costs)
-- **Cost Efficiency Metrics**: Calculates fee rates relative to execution values
-- **Outlier Detection**: Identifies unusual fee patterns that may indicate errors
+**Logic**: Validates fee structure and identifies outliers
+- **Fee Validation**: Checks if fees are negative (costs) as expected
+- **Fee Rate Analysis**: Calculates fee as percentage of execution value to identify expensive trades
+- **Outlier Detection**: Flags unusually high or positive fees that may indicate data errors
 
 #### Spread Analysis
-**Logic**: Market microstructure analysis focusing on bid-ask dynamics
-- **Real-Time Spread Tracking**: Monitors bid-ask spread evolution over time
-- **Execution Impact Visualization**: Shows execution points overlaid on spread timelines
-- **Distribution Analysis**: Analyzes spread distribution patterns and identifies anomalies
+**Logic**: Checks if executions occur during wide spread periods
+- **Spread Timeline Plot**: Shows bid/ask spreads over time with execution points marked at y=0
+- **Wide Spread Detection**: Identifies if trades happen when spreads are unusually wide (bad timing)
+- **Distribution Verification**: Creates histograms to double-check spread patterns and execution frequency
 
-## Visualization Strategy
+## Visualization
 
-### Performance-Optimized Plotting
-- **Selective Downsampling**: Uses configurable downsampling intervals for time series plots to maintain visual clarity while reducing rendering time
-- **Interactive HTML Output**: Generates Plotly HTML files for detailed interactive analysis
-- **Static PNG Export**: Creates high-resolution PNG images for reports and presentations
-
-### Required Visualizations
-1. **Spread Timeline with Executions**: Time series plot showing bid/ask spreads with execution points marked at y=0
-2. **Slippage Distribution**: Histogram of slippage values in basis points with statistical annotations
-3. **Correlation Plots**: Scatter plots showing relationships between slippage and market factors (order size, volatility, liquidity)
-4. **Distribution Analysis**: Multi-panel plots showing spread distributions with execution frequency overlays
-
-### Design Requirements
-- **Consistent Styling**: All plots use `plotly_white` template for professional appearance
-- **Hover Information**: Detailed hover tooltips showing execution details and market conditions
-- **Range Sliders**: Time series plots include navigation controls for zooming
-- **Statistical Annotations**: Plots include mean, median, standard deviation, and correlation statistics
+Uses **Plotly** for interactive charts that can be easily integrated into production dashboards:
+- **HTML Output**: Interactive charts for detailed analysis
+- **PNG Export**: Static images for reports
+- **Downsampling**: Configurable intervals for large datasets to maintain performance
 
 ## Technical Specifications
 
