@@ -223,7 +223,7 @@ def analyze_market_impact_violations(merged_df, save_timestamps=True):
     # Save to JSON file if requested
     if save_timestamps and (violations_for_json or significant_impacts):
         timestamp_str = time.strftime("%Y%m%d_%H%M%S")
-        json_output_file = f"results/violation_timestamps_{timestamp_str}.json"
+        json_output_file = f"results/market_impact_violation_{timestamp_str}.json"
         with open(json_output_file, 'w') as f:
             json.dump(violations_for_json, f, indent=4)
     

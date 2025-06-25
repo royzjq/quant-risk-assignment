@@ -12,6 +12,8 @@ import plotly.graph_objects as go
 from plotly.subplots import make_subplots
 import plotly.io as pio
 import numpy as np
+import json
+import time
 
 pio.templates.default = "plotly_white" # Set a clean default template
 
@@ -158,9 +160,227 @@ def create_spread_visualization(market_data, execution_data, output_dir='results
     print(f"Visualization saved to {output_file_png}")
     print(f"Interactive HTML saved to {output_file_html}")
     
-    fig.show()
+    return output_file_png
+
+
+def create_bidask_spread_distribution(market_data, execution_data, output_dir='results/images'):
+    """
+    Create bid-ask spread distribution chart with execution count overlay
     
-    return output_file_png # Return one path for consistency
+    Args:
+        market_data: Polars DataFrame with market data and spreads
+        execution_data: Polars DataFrame with execution records
+        output_dir: Directory to save the plot
+    """
+    print("Creating bid-ask spread distribution chart...")
+    
+    # Ensure output directory exists
+    Path(output_dir).mkdir(parents=True, exist_ok=True)
+    
+    # Load original data to calculate bid-ask spread
+    df = load_processed_data()
+    
+    # Calculate bid-ask spread (positive values)
+    df_with_bidask_spread = df.with_columns([
+        (pl.col('askPrice-1') - pl.col('bidPrice-1')).alias('bidask_spread')
+    ]).filter(pl.col('bidask_spread') > 0)
+    
+    # Convert to numpy for histogram
+    bidask_spread_data = df_with_bidask_spread['bidask_spread'].to_numpy()
+    
+    # Create custom bins: 30 bins from 0 to 0.3, plus one bin for >0.3
+    num_fine_bins = 30
+    fine_bin_upper_bound = 0.3
+    fine_bin_edges = np.linspace(0, fine_bin_upper_bound, num_fine_bins + 1)
+    
+    # Get the maximum spread from the full dataset
+    max_actual_spread = np.max(bidask_spread_data)
+    
+    # Create the complete bin edges for data analysis
+    if max_actual_spread > fine_bin_upper_bound:
+        # Add the final bin edge for values > 0.3
+        bin_edges = np.concatenate((fine_bin_edges, [max_actual_spread]))
+    else:
+        # If all data is within the fine range, just use fine_bin_edges
+        bin_edges = fine_bin_edges
+    
+    # Calculate bin centers for plotting - the last bin center is set to 0.3
+    bin_centers = (bin_edges[:-1] + bin_edges[1:]) / 2
+    if max_actual_spread > fine_bin_upper_bound:
+        # Set the last bin center to 0.3 for display purposes
+        bin_centers[-1] = fine_bin_upper_bound
+    
+    # Calculate histogram for bid-ask spread (all market data)
+    spread_counts, _ = np.histogram(bidask_spread_data, bins=bin_edges)
+    
+    # Calculate execution distribution
+    exec_records = df_with_bidask_spread.filter(pl.col('eTm').is_not_null())
+    exec_counts = np.zeros(len(bin_centers))  # Initialize with zeros
+    
+    if len(exec_records) > 0:
+        exec_spread_data = exec_records['bidask_spread'].to_numpy()
+        exec_counts, _ = np.histogram(exec_spread_data, bins=bin_edges)
+    
+    # Create subplot with secondary y-axis
+    fig = make_subplots(specs=[[{"secondary_y": True}]])
+    
+    # Calculate bin widths for bar chart - all bins have the same width
+    regular_bin_width = (fine_bin_upper_bound / num_fine_bins) * 0.9  # Width of regular bins
+    bin_widths = [regular_bin_width] * len(bin_centers)  # All bins have the same width
+    
+    # Add bid-ask spread distribution (bar chart)
+    fig.add_trace(
+        go.Bar(x=bin_centers, y=spread_counts,
+               name='Market Data Frequency',
+               marker_color='lightblue', opacity=0.7,
+               width=bin_widths),
+        secondary_y=False
+    )
+    
+    # Add execution count distribution (line chart)
+    fig.add_trace(
+        go.Scatter(x=bin_centers, y=exec_counts,
+                   mode='lines+markers',
+                   name='Execution Count',
+                   line=dict(color='red', width=3),
+                   marker=dict(color='red', size=6)),
+        secondary_y=True
+    )
+    
+    # Prepare custom tick labels
+    tick_vals = bin_centers.tolist()
+    tick_texts = [f'{val:.3f}' for val in bin_centers]
+    
+    # Special label for the last bin if it represents >0.3
+    if max_actual_spread > fine_bin_upper_bound and len(bin_centers) > num_fine_bins:
+        tick_texts[-1] = f'>0.3'
+    
+    # Update layout
+    fig.update_layout(
+        title_text='BTCUSDT Bid-Ask Spread Distribution with Execution Count',
+        xaxis_title_text='Bid-Ask Spread (USDT)',
+        legend=dict(x=0.02, y=0.98, bgcolor='rgba(255,255,255,0.8)', bordercolor='rgba(0,0,0,0.1)', borderwidth=1),
+        showlegend=True,
+        xaxis=dict(
+            type='linear', 
+            range=[0, bin_centers[-1] + (bin_centers[-1] - bin_centers[-2])/2],
+            tickmode='array',
+            tickvals=tick_vals[::2],  # Show every 2nd tick to avoid crowding
+            ticktext=[tick_texts[i] for i in range(0, len(tick_texts), 2)]
+        )
+    )
+    
+    # Set y-axes titles
+    fig.update_yaxes(title_text="Market Data Frequency", secondary_y=False)
+    fig.update_yaxes(title_text="Execution Count", secondary_y=True)
+    
+    # Save the plot
+    output_file_png = Path(output_dir) / 'btcusdt_bidask_spread_execution_distribution.png'
+    output_file_html = Path(output_dir) / 'btcusdt_bidask_spread_execution_distribution.html'
+    
+    fig.write_image(str(output_file_png), scale=2)
+    fig.write_html(str(output_file_html))
+    
+    print(f"Bid-Ask spread distribution chart saved to {output_file_png}")
+    print(f"Interactive HTML saved to {output_file_html}")
+    
+    return output_file_png
+
+
+def export_large_spread_trades(threshold=0.2, output_dir='results'):
+    """
+    Export trades with bid-ask spread larger than threshold to JSON file
+    
+    Args:
+        threshold: Minimum bid-ask spread threshold (default: 0.2)
+        output_dir: Directory to save the JSON file
+        
+    Returns:
+        str: Path to the exported JSON file
+    """
+    print(f"Exporting trades with bid-ask spread > {threshold} USDT...")
+    
+    # Ensure output directory exists
+    Path(output_dir).mkdir(parents=True, exist_ok=True)
+    
+    # Load original data
+    df = load_processed_data()
+    
+    # Calculate bid-ask spread and filter for executions only
+    df_with_trades = df.filter(pl.col('eTm').is_not_null()).with_columns([
+        (pl.col('askPrice-1') - pl.col('bidPrice-1')).alias('bidask_spread')
+    ])
+    
+    # Filter trades with large spread
+    large_spread_trades = df_with_trades.filter(
+        pl.col('bidask_spread') > threshold
+    ).select([
+        'eTm',
+        'eTm_microseconds', 
+        'timestamp',
+        'px',
+        'qty', 
+        'sde',
+        'bidPrice-1',
+        'askPrice-1',
+        'bidask_spread'
+    ]).with_columns([
+        # Convert timestamps to readable format
+        (pl.from_epoch(pl.col('eTm_microseconds'), time_unit='us')).alias('execution_datetime'),
+        (pl.from_epoch(pl.col('timestamp'), time_unit='us')).alias('market_data_datetime')
+    ])
+    
+    # Convert to Python dict for JSON export
+    trades_data = {
+        'metadata': {
+            'threshold_usdt': threshold,
+            'total_large_spread_trades': len(large_spread_trades),
+            'description': f'Trades with bid-ask spread > {threshold} USDT'
+        },
+        'trades': []
+    }
+    
+    # Add trade records
+    for row in large_spread_trades.rows(named=True):
+        trade_record = {
+            'execution_time': row['eTm'],
+            'execution_datetime': str(row['execution_datetime']),
+            'market_data_datetime': str(row['market_data_datetime']),
+            'execution_price': row['px'],
+            'quantity': row['qty'],
+            'side': row['sde'],  # 1=Buy, 2=Sell
+            'bid_price': row['bidPrice-1'],
+            'ask_price': row['askPrice-1'],
+            'bidask_spread_usdt': row['bidask_spread']
+        }
+        trades_data['trades'].append(trade_record)
+    
+    # Sort trades by execution time
+    trades_data['trades'].sort(key=lambda x: x['execution_time'])
+    
+    # Save to JSON file
+    output_file = Path(output_dir) / 'trade-with-large-spread.json'
+    with open(output_file, 'w', encoding='utf-8') as f:
+        json.dump(trades_data, f, indent=2, ensure_ascii=False)
+    
+    print(f"Exported {len(large_spread_trades)} large spread trades to {output_file}")
+    
+    # Print summary statistics
+    if len(large_spread_trades) > 0:
+        spread_stats = large_spread_trades['bidask_spread']
+        print(f"Large spread trades summary:")
+        print(f"  Min spread: {spread_stats.min():.6f} USDT")
+        print(f"  Max spread: {spread_stats.max():.6f} USDT") 
+        print(f"  Mean spread: {spread_stats.mean():.6f} USDT")
+        print(f"  Median spread: {spread_stats.median():.6f} USDT")
+        
+        # Count by side
+        side_counts = large_spread_trades.group_by('sde').len().sort('sde')
+        for row in side_counts.rows():
+            side_name = "Buy" if row[0] == 1 else "Sell" if row[0] == 2 else f"Side {row[0]}"
+            print(f"  {side_name} trades: {row[1]}")
+    
+    return str(output_file)
 
 
 def generate_summary_stats(market_data, execution_data):
@@ -213,218 +433,6 @@ def generate_summary_stats(market_data, execution_data):
     print("="*50)
 
 
-def create_spread_distribution_chart(market_data, execution_data, output_dir='results/images', n_bins=100):
-    """
-    Create bid-ask spread distribution chart with overlaid execution distribution
-    
-    Args:
-        market_data: Polars DataFrame with market data and spreads
-        execution_data: Polars DataFrame with execution records
-        output_dir: Directory to save the plot
-        n_bins: Number of bins for the histogram
-    """
-    print("Creating bid-ask spread distribution chart...")
-    
-    # Ensure output directory exists
-    Path(output_dir).mkdir(parents=True, exist_ok=True)
-    
-    # Create subplots with secondary y-axis
-    fig = make_subplots(specs=[[{"secondary_y": True}]])
-    
-    # Calculate bid-ask spread (positive values)
-    # We need to go back to the original data to calculate the actual bid-ask spread
-    # Since market_data only has bid_spread and ask_spread relative to mid price
-    # We need to recalculate from the original processed data
-    
-    # Load the original processed data again to get bidPrice-1 and askPrice-1
-    df = load_processed_data()
-    
-    # Calculate bid-ask spread (positive values)
-    df_with_bidask_spread = df.with_columns([
-        (pl.col('askPrice-1') - pl.col('bidPrice-1')).alias('bidask_spread')
-    ])
-    
-    # Filter out any invalid spreads
-    df_with_bidask_spread = df_with_bidask_spread.filter(
-        pl.col('bidask_spread') > 0
-    )
-    
-    # Convert to numpy for histogram
-    bidask_spread_data = df_with_bidask_spread['bidask_spread'].to_numpy()
-    
-    # Determine bin range: custom bins for 0-0.1, and one 'others' bin
-    # Define fine bins from 0 to 0.1 (e.g., 20 bins of 0.005 width)
-    fine_bin_upper_bound = 0.1
-    num_fine_bins = 20 # 20 bins between 0 and 0.1 (step of 0.005)
-    fine_bin_edges = np.linspace(0, fine_bin_upper_bound, num_fine_bins + 1)
-
-    # Get the maximum spread from the full dataset
-    max_actual_spread = np.max(bidask_spread_data)
-
-    # Create the 'others' bin edge
-    if max_actual_spread > fine_bin_upper_bound:
-        # Concatenate fine_bin_edges with max_actual_spread to form the last bin
-        bin_edges = np.concatenate((fine_bin_edges, [max_actual_spread]))
-    else:
-        # If all data is within the fine range, just use fine_bin_edges
-        bin_edges = fine_bin_edges
-    
-    # Calculate bin centers
-    bin_centers = (bin_edges[:-1] + bin_edges[1:]) / 2
-    
-    # Calculate histogram for bid-ask spread
-    spread_counts, _ = np.histogram(bidask_spread_data, bins=bin_edges)
-    
-    # Add bid-ask spread distribution
-    fig.add_trace(
-        go.Bar(x=bin_centers, y=spread_counts, 
-               name='Bid-Ask Spread Distribution',
-               marker_color='blue', opacity=0.7,
-               width=[(bin_edges[i+1] - bin_edges[i]) * 0.9 for i in range(len(bin_centers))]
-              ),
-        secondary_y=False
-    )
-    
-    # Calculate execution distribution if executions exist
-    if len(execution_data) > 0:
-        # Filter the combined data for execution records
-        exec_records = df_with_bidask_spread.filter(pl.col('eTm').is_not_null())
-        
-        if len(exec_records) > 0:
-            exec_spread_data = exec_records['bidask_spread'].to_numpy()
-            exec_counts, _ = np.histogram(exec_spread_data, bins=bin_edges)
-            
-            # Filter out bins with zero execution counts for plotting
-            non_zero_exec_indices = exec_counts > 0
-            filtered_bin_centers = bin_centers[non_zero_exec_indices]
-            filtered_exec_counts = exec_counts[non_zero_exec_indices]
-            
-            if len(filtered_exec_counts) > 0:
-                # Add execution distribution on secondary y-axis
-                fig.add_trace(
-                    go.Scatter(x=filtered_bin_centers, y=filtered_exec_counts,
-                              mode='lines+markers',
-                              name='Execution Count Distribution',
-                              line=dict(color='red', width=3),
-                              marker=dict(color='red', size=6)),
-                    secondary_y=True
-                )
-    
-    # Prepare custom tick text for x-axis
-    tick_vals = bin_edges
-    tick_texts = [f'{val:.3f}' for val in bin_edges]
-    if max_actual_spread > fine_bin_upper_bound and len(bin_edges) > 1:
-        tick_texts[-1] = f'>{fine_bin_upper_bound:.1f} (Others)' # Label for the last bin
-
-    # Update layout
-    fig.update_layout(
-        title_text='BTCUSDT Bid-Ask Spread Distribution with Execution Distribution (Custom Fine Bins)',
-        xaxis_title_text='Bid-Ask Spread (USDT)',
-        barmode='overlay',
-        legend=dict(x=0.7, y=0.99, bgcolor='rgba(255,255,255,0.8)', bordercolor='rgba(0,0,0,0.1)', borderwidth=1),
-        showlegend=True,
-        xaxis=dict(type='linear', range=[0, bin_edges[-1]], 
-                   tickmode='array', 
-                   tickvals=tick_vals,
-                   ticktext=tick_texts
-                  )
-    )
-    
-    # Set y-axes titles
-    fig.update_yaxes(title_text="Market Data Frequency", secondary_y=False)
-    fig.update_yaxes(title_text="Execution Count", secondary_y=True)
-    
-    # Save the plot
-    output_file_png = Path(output_dir) / 'btcusdt_bidask_spread_distribution_custom_fine_bins.png'
-    output_file_html = Path(output_dir) / 'btcusdt_bidask_spread_distribution_custom_fine_bins.html'
-
-    fig.write_image(str(output_file_png), scale=2)
-    fig.write_html(str(output_file_html))
-    
-    print(f"Bid-Ask spread distribution chart (custom fine bins) saved to {output_file_png}")
-    print(f"Interactive HTML saved to {output_file_html}")
-    
-    fig.show()
-    
-    return output_file_png
-
-
-def generate_distribution_summary_stats(market_data, execution_data):
-    """
-    Generate summary statistics for bid-ask spread distribution analysis
-    """
-    print("\n" + "="*60)
-    print("BID-ASK SPREAD DISTRIBUTION ANALYSIS SUMMARY")
-    print("="*60)
-    
-    # Load original data to calculate bid-ask spread
-    df = load_processed_data()
-    df_with_bidask_spread = df.with_columns([
-        (pl.col('askPrice-1') - pl.col('bidPrice-1')).alias('bidask_spread')
-    ]).filter(pl.col('bidask_spread') > 0)
-    
-    # Basic bid-ask spread statistics
-    bidask_spread_stats = {
-        'mean': df_with_bidask_spread['bidask_spread'].mean(),
-        'std': df_with_bidask_spread['bidask_spread'].std(),
-        'min': df_with_bidask_spread['bidask_spread'].min(),
-        'max': df_with_bidask_spread['bidask_spread'].max(),
-        'q25': df_with_bidask_spread['bidask_spread'].quantile(0.25),
-        'q50': df_with_bidask_spread['bidask_spread'].quantile(0.50),
-        'q75': df_with_bidask_spread['bidask_spread'].quantile(0.75),
-        'q95': df_with_bidask_spread['bidask_spread'].quantile(0.95),
-        'q99': df_with_bidask_spread['bidask_spread'].quantile(0.99)
-    }
-    
-    print(f"Bid-Ask Spread Distribution (askPrice-1 - bidPrice-1):")
-    print(f"  Count: {len(df_with_bidask_spread):,} records")
-    print(f"  Mean:  {bidask_spread_stats['mean']:.6f} USDT")
-    print(f"  Std:   {bidask_spread_stats['std']:.6f} USDT")
-    print(f"  Min:   {bidask_spread_stats['min']:.6f} USDT")
-    print(f"  25%:   {bidask_spread_stats['q25']:.6f} USDT")
-    print(f"  50%:   {bidask_spread_stats['q50']:.6f} USDT")
-    print(f"  75%:   {bidask_spread_stats['q75']:.6f} USDT")
-    print(f"  95%:   {bidask_spread_stats['q95']:.6f} USDT")
-    print(f"  99%:   {bidask_spread_stats['q99']:.6f} USDT")
-    print(f"  Max:   {bidask_spread_stats['max']:.6f} USDT")
-    
-    # Execution analysis if available
-    if len(execution_data) > 0:
-        # Get execution records with their spreads
-        exec_records = df_with_bidask_spread.filter(pl.col('eTm').is_not_null())
-        
-        if len(exec_records) > 0:
-            exec_spread_stats = {
-                'mean': exec_records['bidask_spread'].mean(),
-                'std': exec_records['bidask_spread'].std(),
-                'min': exec_records['bidask_spread'].min(),
-                'max': exec_records['bidask_spread'].max(),
-                'q50': exec_records['bidask_spread'].quantile(0.50)
-            }
-            
-            print(f"\nExecution Analysis:")
-            print(f"  Total executions: {len(exec_records):,}")
-            print(f"  Avg execution spread: {exec_spread_stats['mean']:.6f} USDT")
-            print(f"  Median execution spread: {exec_spread_stats['q50']:.6f} USDT")
-            print(f"  Min execution spread: {exec_spread_stats['min']:.6f} USDT")
-            print(f"  Max execution spread: {exec_spread_stats['max']:.6f} USDT")
-            
-            # Count executions by side
-            if 'sde' in exec_records.columns:
-                side_counts = exec_records.group_by('sde').len().sort('sde')
-                for row in side_counts.rows():
-                    side_name = "Buy" if row[0] == 1 else "Sell" if row[0] == 2 else f"Side {row[0]}"
-                    print(f"  {side_name} executions: {row[1]:,}")
-            
-            # Compare execution spread vs market spread
-            overall_median = bidask_spread_stats['q50']
-            exec_median = exec_spread_stats['q50']
-            spread_premium = ((exec_median - overall_median) / overall_median) * 100
-            print(f"  Execution spread premium vs market median: {spread_premium:.2f}%")
-    
-    print("="*60)
-
-
 def main():
     """
     Main function to run the spread visualization
@@ -445,14 +453,11 @@ def main():
         # Create visualization
         output_file = create_spread_visualization(market_data, execution_data, downsample_interval=100)
         
-        # Create spread distribution chart
-        create_spread_distribution_chart(market_data, execution_data, n_bins=100)
+        # Create bid-ask spread distribution chart
+        create_bidask_spread_distribution(market_data, execution_data)
         
-        # Generate distribution summary statistics
-        generate_distribution_summary_stats(market_data, execution_data)
-        
-        print(f"\nMarket data visualization completed successfully!")
-        print(f"Output saved to: {output_file}")
+        # Export large spread trades
+        export_large_spread_trades()
         
     except Exception as e:
         print(f"Error during visualization: {str(e)}")

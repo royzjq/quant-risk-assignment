@@ -25,6 +25,8 @@ sys.path.append('visualization')
 from validation.exec_validator import validate_exec_csv
 from data_prep.data_processor import prepare_btcusdt_data, save_to_parquet
 from analysis.market_impact_analyzer import analyze_market_impact_violations, load_processed_data
+from analysis.slippage_analyzer import run_comprehensive_slippage_analysis
+from analysis.latency_analyzer import run_comprehensive_latency_analysis
 from visualization.spread_visualization import main as run_spread_visualization
 
 def run_pipeline(exec_file='exec.csv', market_data_dir='data', force_reprocess=False, enable_visualization=True):
@@ -49,6 +51,8 @@ def run_pipeline(exec_file='exec.csv', market_data_dir='data', force_reprocess=F
         "validation": None,
         "data_preparation": None,
         "market_impact_analysis": None,
+        "slippage_analysis": None,
+        "latency_analysis": None,
         "visualization": None,
         "execution_time": None
     }
@@ -111,10 +115,59 @@ def run_pipeline(exec_file='exec.csv', market_data_dir='data', force_reprocess=F
             }
             print("Skipping market impact analysis due to no processed data available.")
         
-        # Step 4: Visualization
+        # Step 4: Slippage Analysis
+        print("\n" + "="*40)
+        print("STEP 4: SLIPPAGE ANALYSIS")
+
+        if merged_df is not None:
+            try:
+                slippage_results = run_comprehensive_slippage_analysis(
+                    parquet_path=processed_data_path,
+                    output_dir="results/images"
+                )
+                results["slippage_analysis"] = slippage_results
+            except Exception as e:
+                print(f"Slippage analysis failed: {str(e)}")
+                results["slippage_analysis"] = {
+                    "status": "ERROR",
+                    "error": str(e)
+                }
+        else:
+            results["slippage_analysis"] = {
+                "status": "SKIPPED_NO_DATA_FOR_ANALYSIS",
+                "message": "No processed data available for slippage analysis"
+            }
+            print("Skipping slippage analysis due to no processed data available.")
+        
+        # Step 5: Latency Analysis
+        print("\n" + "="*40)
+        print("STEP 5: LATENCY ANALYSIS")
+
+        if merged_df is not None:
+            try:
+                latency_results = run_comprehensive_latency_analysis(
+                    parquet_path=processed_data_path,
+                    output_dir="results",
+                    outlier_threshold=2.5
+                )
+                results["latency_analysis"] = latency_results
+            except Exception as e:
+                print(f"Latency analysis failed: {str(e)}")
+                results["latency_analysis"] = {
+                    "status": "ERROR",
+                    "error": str(e)
+                }
+        else:
+            results["latency_analysis"] = {
+                "status": "SKIPPED_NO_DATA_FOR_ANALYSIS",
+                "message": "No processed data available for latency analysis"
+            }
+            print("Skipping latency analysis due to no processed data available.")
+        
+        # Step 6: Visualization
         if enable_visualization:
             print("\n" + "="*40)
-            print("STEP 4: SPREAD VISUALIZATION")
+            print("STEP 6: SPREAD VISUALIZATION")
             
             if merged_df is not None:
                 try:
@@ -155,6 +208,8 @@ def run_pipeline(exec_file='exec.csv', market_data_dir='data', force_reprocess=F
         print(f"Data validation: {results['validation']['status']}")
         print(f"Data preparation: {results['data_preparation']['status']}")
         print(f"Market impact analysis: {results['market_impact_analysis']['status']}")
+        print(f"Slippage analysis: {results['slippage_analysis']['status']}")
+        print(f"Latency analysis: {results['latency_analysis']['status']}")
         print(f"Visualization: {results['visualization']['status']}")
         
         # Violations summary
@@ -166,6 +221,36 @@ def run_pipeline(exec_file='exec.csv', market_data_dir='data', force_reprocess=F
             for violation_type, details in violations.items():
                 if details.get('count', 0) > 0:
                     print(f"  - {violation_type}: {details['count']} violations")
+        
+        # Slippage analysis summary
+        if results['slippage_analysis']['status'] == 'COMPLETE':
+            slippage_stats = results['slippage_analysis']['summary_statistics']
+            correlations = results['slippage_analysis']['correlations']
+            print(f"Slippage analysis results:")
+            print(f"  - Total execution records analyzed: {slippage_stats.get('count', 0)}")
+            print(f"  - Mean slippage: {slippage_stats.get('mean_bps', 0):.2f} bps")
+            print(f"  - Median slippage: {slippage_stats.get('median_bps', 0):.2f} bps")
+            
+            # Show correlations
+            for analysis_type, details in correlations.items():
+                if details.get('correlation') is not None:
+                    print(f"  - {analysis_type.replace('_', ' ').title()}: r={details['correlation']:.3f}")
+        
+        # Latency analysis summary
+        if results['latency_analysis']['status'] == 'COMPLETE':
+            latency_stats = results['latency_analysis']['summary_statistics']
+            outlier_counts = results['latency_analysis']['outlier_analysis']['outlier_counts']
+            print(f"Latency analysis results:")
+            
+            for latency_type, stats in latency_stats.items():
+                if stats:
+                    print(f"  - {latency_type.replace('_', ' ').title()}:")
+                    print(f"    Mean: {stats.get('mean_us', 0):.0f} μs, P95: {stats.get('p95_us', 0):.0f} μs")
+                    outlier_count = outlier_counts.get(latency_type, 0)
+                    if outlier_count > 0:
+                        total_count = stats.get('count', 0)
+                        outlier_pct = (outlier_count / total_count) * 100 if total_count > 0 else 0
+                        print(f"    Outliers: {outlier_count} ({outlier_pct:.1f}%)")
         
         print("="*60)
         
