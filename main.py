@@ -27,9 +27,10 @@ from data_prep.data_processor import prepare_btcusdt_data, save_to_parquet
 from analysis.market_impact_analyzer import analyze_market_impact_violations, load_processed_data
 from analysis.slippage_analyzer import run_comprehensive_slippage_analysis
 from analysis.latency_analyzer import run_comprehensive_latency_analysis
-from visualization.spread_visualization import main as run_spread_visualization
+from analysis.fee_analyzer import run_comprehensive_fee_analysis
+from analysis.spread_analyzer import run_comprehensive_spread_analysis
 
-def run_pipeline(exec_file='exec.csv', market_data_dir='data', force_reprocess=False, enable_visualization=True):
+def run_pipeline(exec_file='exec.csv', market_data_dir='data', force_reprocess=False, enable_spread_analysis=True):
     """
     Run the complete quantitative risk analysis pipeline
     
@@ -37,7 +38,7 @@ def run_pipeline(exec_file='exec.csv', market_data_dir='data', force_reprocess=F
         exec_file: Path to execution data CSV file
         market_data_dir: Directory containing market data files
         force_reprocess: Whether to force reprocessing even if processed data exists
-        enable_visualization: Whether to run the visualization step
+        enable_spread_analysis: Whether to run the spread analysis step
         
     Returns:
         dict: Pipeline execution results
@@ -53,6 +54,7 @@ def run_pipeline(exec_file='exec.csv', market_data_dir='data', force_reprocess=F
         "market_impact_analysis": None,
         "slippage_analysis": None,
         "latency_analysis": None,
+        "fee_analysis": None,
         "visualization": None,
         "execution_time": None
     }
@@ -164,21 +166,46 @@ def run_pipeline(exec_file='exec.csv', market_data_dir='data', force_reprocess=F
             }
             print("Skipping latency analysis due to no processed data available.")
         
-        # Step 6: Visualization
-        if enable_visualization:
+        # Step 6: Fee Analysis
+        print("\n" + "="*40)
+        print("STEP 6: FEE ANALYSIS")
+
+        if merged_df is not None:
+            try:
+                fee_results = run_comprehensive_fee_analysis(
+                    parquet_path=processed_data_path,
+                    output_dir="results",
+                    outlier_threshold=2.0
+                )
+                results["fee_analysis"] = fee_results
+            except Exception as e:
+                print(f"Fee analysis failed: {str(e)}")
+                results["fee_analysis"] = {
+                    "status": "ERROR",
+                    "error": str(e)
+                }
+        else:
+            results["fee_analysis"] = {
+                "status": "SKIPPED_NO_DATA_FOR_ANALYSIS",
+                "message": "No processed data available for fee analysis"
+            }
+            print("Skipping fee analysis due to no processed data available.")
+        
+        # Step 7: Spread Analysis
+        if enable_spread_analysis:
             print("\n" + "="*40)
-            print("STEP 6: SPREAD VISUALIZATION")
+            print("STEP 7: SPREAD ANALYSIS")
             
             if merged_df is not None:
                 try:
-                    run_spread_visualization()
-                    results["visualization"] = {
-                        "status": "COMPLETE",
-                        "output_dir": "results/images",
-                        "files_generated": ["btcusdt_spread_visualization.png", "btcusdt_spread_visualization.pdf"]
-                    }
+                    spread_results = run_comprehensive_spread_analysis(
+                        parquet_path=processed_data_path,
+                        output_dir="results",
+                        downsample_interval=100
+                    )
+                    results["visualization"] = spread_results
                 except Exception as e:
-                    print(f"Visualization failed: {str(e)}")
+                    print(f"Spread analysis failed: {str(e)}")
                     results["visualization"] = {
                         "status": "ERROR",
                         "error": str(e)
@@ -186,15 +213,15 @@ def run_pipeline(exec_file='exec.csv', market_data_dir='data', force_reprocess=F
             else:
                 results["visualization"] = {
                     "status": "SKIPPED_NO_DATA",
-                    "message": "No processed data available for visualization"
+                    "message": "No processed data available for spread analysis"
                 }
-                print("Skipping visualization due to no processed data available.")
+                print("Skipping spread analysis due to no processed data available.")
         else:
             results["visualization"] = {
                 "status": "DISABLED",
-                "message": "Visualization step disabled"
+                "message": "Spread analysis step disabled"
             }
-            print("Visualization step disabled.")
+            print("Spread analysis step disabled.")
         
         # Pipeline completion
         pipeline_time = time.time() - pipeline_start_time
@@ -210,7 +237,8 @@ def run_pipeline(exec_file='exec.csv', market_data_dir='data', force_reprocess=F
         print(f"Market impact analysis: {results['market_impact_analysis']['status']}")
         print(f"Slippage analysis: {results['slippage_analysis']['status']}")
         print(f"Latency analysis: {results['latency_analysis']['status']}")
-        print(f"Visualization: {results['visualization']['status']}")
+        print(f"Fee analysis: {results['fee_analysis']['status']}")
+        print(f"Spread analysis: {results['visualization']['status']}")
         
         # Violations summary
         if results['market_impact_analysis']['status'] == 'COMPLETE':
@@ -252,6 +280,21 @@ def run_pipeline(exec_file='exec.csv', market_data_dir='data', force_reprocess=F
                         outlier_pct = (outlier_count / total_count) * 100 if total_count > 0 else 0
                         print(f"    Outliers: {outlier_count} ({outlier_pct:.1f}%)")
         
+        # Fee analysis summary
+        if results['fee_analysis']['status'] == 'COMPLETE':
+            fee_stats = results['fee_analysis']['summary_statistics']
+            fee_correlations = results['fee_analysis']['correlations']
+            outlier_analysis = results['fee_analysis']['outlier_analysis']
+            print(f"Fee analysis results:")
+            print(f"  - Total execution records analyzed: {fee_stats.get('count', 0)}")
+            print(f"  - Mean fee: {fee_stats.get('fee_stats', {}).get('mean', 0):.6f}")
+            print(f"  - Fee outliers: {outlier_analysis.get('outlier_count', 0)} ({outlier_analysis.get('outlier_percentage', 0):.1f}%)")
+            
+            # Show correlations
+            for analysis_type, details in fee_correlations.items():
+                if details.get('correlation') is not None:
+                    print(f"  - {analysis_type.replace('_', ' ').title()}: r={details['correlation']:.3f}")
+        
         print("="*60)
         
         return results
@@ -289,9 +332,9 @@ def main():
         help='Force reprocessing even if processed data exists'
     )
     parser.add_argument(
-        '--no-visualization',
+        '--no-spread-analysis',
         action='store_true',
-        help='Disable visualization step'
+        help='Disable spread analysis step'
     )
     
     args = parser.parse_args()
@@ -301,7 +344,7 @@ def main():
         exec_file=args.exec_file,
         market_data_dir=args.market_data_dir,
         force_reprocess=args.force_reprocess,
-        enable_visualization=not args.no_visualization
+        enable_spread_analysis=not args.no_spread_analysis
     )
     
     # Exit with appropriate code
