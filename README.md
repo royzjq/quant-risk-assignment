@@ -75,12 +75,34 @@ results = analyze_market_impact_violations(merged_df, save_timestamps=True)
 - **btcusdt_processed_data.parquet**: Processed and merged market-execution data
 - **violation_timestamps_*.json**: Timestamps of market impact violations
 
+## Installation / 安装
+
+### Prerequisites / 前置要求
+- Python 3.8 or higher / Python 3.8 或更高版本
+
+### Install Dependencies / 安装依赖
+```bash
+# Install from requirements.txt / 从requirements.txt安装
+pip install -r requirements.txt
+
+# Or install packages individually / 或单独安装包
+pip install polars>=0.19.0 pandas>=2.0.0 numpy>=1.24.0 plotly>=5.15.0 scipy>=1.10.0 scikit-learn>=1.3.0
+```
+
 ## Dependencies / 依赖
 
-- polars: Fast DataFrame library
-- pandas: Data analysis library
-- numpy: Numerical computing
-- pathlib: Path handling
+### Core Dependencies / 核心依赖
+- **polars**: Fast DataFrame library for data processing / 快速数据处理库
+- **pandas**: Data analysis and manipulation / 数据分析和操作
+- **numpy**: Numerical computing / 数值计算
+- **plotly**: Interactive visualizations / 交互式可视化
+- **scipy**: Scientific computing / 科学计算
+- **scikit-learn**: Machine learning algorithms / 机器学习算法
+
+### Optional Dependencies / 可选依赖
+- **kaleido**: Static image export for Plotly / Plotly静态图像导出
+- **ipython**: Enhanced interactive Python / 增强交互式Python
+- **jupyter**: Notebook environment / 笔记本环境
 
 ## Analysis Results / 分析结果
 
