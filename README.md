@@ -113,6 +113,13 @@ quant-risk-assignment/
 
 ## Usage
 
+### Quick Start
+1. Put `exec.csv` and market data CSV files in the `data/` folder
+2. Run the pipeline:
+```bash
+python main.py
+```
+
 ### Complete Pipeline
 ```bash
 # Run full analysis pipeline
