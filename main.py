@@ -23,33 +23,35 @@ sys.path.append('analysis')
 sys.path.append('visualization')
 
 from validation.exec_validator import validate_exec_csv
-from data_prep.data_processor import prepare_btcusdt_data, save_to_parquet
+from data_prep.data_processor import prepare_symbol_data, save_to_parquet
 from analysis.market_impact_analyzer import analyze_market_impact_violations, load_processed_data
-from analysis.slippage_analyzer import run_comprehensive_slippage_analysis
-from analysis.latency_analyzer import run_comprehensive_latency_analysis
-from analysis.fee_analyzer import run_comprehensive_fee_analysis
-from analysis.spread_analyzer import run_comprehensive_spread_analysis
+from analysis.slippage_analyzer import run_comprehensive_slippage_analysis_with_data
+from analysis.latency_analyzer import run_comprehensive_latency_analysis_with_data
+from analysis.fee_analyzer import run_comprehensive_fee_analysis_with_data
+from analysis.spread_analyzer import run_comprehensive_spread_analysis_with_data
 
-def run_pipeline(exec_file='exec.csv', market_data_dir='data', force_reprocess=False, enable_spread_analysis=True):
+def run_symbol_pipeline(symbol, exec_file='exec.csv', market_data_dir='data', force_reprocess=False, enable_spread_analysis=True):
     """
-    Run the complete quantitative risk analysis pipeline
+    Run the analysis pipeline for a single symbol
     
     Args:
+        symbol: Trading symbol to process (e.g., 'BTCUSDT', 'ETHUSDT')
         exec_file: Path to execution data CSV file
         market_data_dir: Directory containing market data files
         force_reprocess: Whether to force reprocessing even if processed data exists
         enable_spread_analysis: Whether to run the spread analysis step
         
     Returns:
-        dict: Pipeline execution results
+        dict: Pipeline execution results for the symbol
     """
-    print("="*60)
-    print("QUANTITATIVE RISK ANALYSIS PIPELINE")
+    print(f"\n{'='*60}")
+    print(f"PROCESSING {symbol}")
+    print(f"{'='*60}")
 
-    pipeline_start_time = time.time()
+    symbol_start_time = time.time()
     results = {
+        "symbol": symbol,
         "pipeline_status": "RUNNING",
-        "validation": None,
         "data_preparation": None,
         "market_impact_analysis": None,
         "slippage_analysis": None,
@@ -60,40 +62,25 @@ def run_pipeline(exec_file='exec.csv', market_data_dir='data', force_reprocess=F
     }
     
     try:
-        # Step 1: Data Validation
-        print("\n" + "="*40)
-        print("STEP 1: DATA VALIDATION")
-
+        # Step 1: Data Preparation
+        print(f"\n{'='*40}")
+        print(f"STEP 2: DATA PREPARATION FOR {symbol}")
         
-        validation_results = validate_exec_csv(exec_file)
-        results["validation"] = {
-            "status": "COMPLETE" if validation_results["summary"] == "Validation Report for exec.csv" else "ERROR",
-            "missing_values_count": len(validation_results["missing_values"]),
-            "data_type_issues_count": len(validation_results["data_type_issues"]),
-            "value_range_issues_count": len(validation_results["value_range_issues"]),
-            "anomalies_count": len(validation_results["anomalies"])
-        }
-        
-        # Step 2: Data Preparation
-        print("\n" + "="*40)
-        print("STEP 2: DATA PREPARATION")
-
-        
-        processed_data_path = "results/btcusdt_processed_data.parquet"
+        processed_data_path = f"results/{symbol.lower()}_processed_data.parquet"
         
         # Check if reprocessing is forced or if processed data does not exist
         if force_reprocess or not Path(processed_data_path).exists():
-            print("Preparing BTCUSDT data...")
-            merged_df, coverage_status = prepare_btcusdt_data(exec_file=exec_file, market_data_dir=market_data_dir)
+            print(f"Preparing {symbol} data...")
+            merged_df, coverage_status = prepare_symbol_data(exec_file=exec_file, market_data_dir=market_data_dir, symbol=symbol)
             if merged_df is not None:
                 save_to_parquet(merged_df, processed_data_path)
                 print(f"Processed data saved to {processed_data_path}")
             else:
                 coverage_status = "SKIPPED_NO_RAW_DATA"
-                print("Skipping data preparation due to no raw data found.")
+                print(f"Skipping {symbol} data preparation due to no raw data found.")
         else:
             print(f"Processed data found at {processed_data_path}")
-            print("Loading existing processed data for analysis...")
+            print(f"Loading existing processed data for {symbol} analysis...")
             merged_df = load_processed_data(processed_data_path)
             coverage_status = "LOADED_FOR_ANALYSIS"
 
@@ -103,33 +90,34 @@ def run_pipeline(exec_file='exec.csv', market_data_dir='data', force_reprocess=F
             "output_file": processed_data_path
         }
         
-        # Step 3: Market Impact Analysis
-        print("\n" + "="*40)
-        print("STEP 3: MARKET IMPACT ANALYSIS")
+        # Step 2: Market Impact Analysis
+        print(f"\n{'='*40}")
+        print(f"STEP 3: MARKET IMPACT ANALYSIS FOR {symbol}")
 
         if merged_df is not None:
-            market_impact_results = analyze_market_impact_violations(merged_df, save_timestamps=True)
+            market_impact_results = analyze_market_impact_violations(merged_df, save_timestamps=True, symbol=symbol)
             results["market_impact_analysis"] = market_impact_results
         else:
             results["market_impact_analysis"] = {
                 "status": "SKIPPED_NO_DATA_FOR_ANALYSIS",
                 "violations": {}
             }
-            print("Skipping market impact analysis due to no processed data available.")
+            print(f"Skipping {symbol} market impact analysis due to no processed data available.")
         
-        # Step 4: Slippage Analysis
-        print("\n" + "="*40)
-        print("STEP 4: SLIPPAGE ANALYSIS")
+        # Step 3: Slippage Analysis
+        print(f"\n{'='*40}")
+        print(f"STEP 4: SLIPPAGE ANALYSIS FOR {symbol}")
 
         if merged_df is not None:
             try:
-                slippage_results = run_comprehensive_slippage_analysis(
-                    parquet_path=processed_data_path,
-                    output_dir="results/images"
+                slippage_results = run_comprehensive_slippage_analysis_with_data(
+                    df=merged_df,
+                    output_dir="results/images",
+                    symbol=symbol
                 )
                 results["slippage_analysis"] = slippage_results
             except Exception as e:
-                print(f"Slippage analysis failed: {str(e)}")
+                print(f"{symbol} slippage analysis failed: {str(e)}")
                 results["slippage_analysis"] = {
                     "status": "ERROR",
                     "error": str(e)
@@ -137,24 +125,25 @@ def run_pipeline(exec_file='exec.csv', market_data_dir='data', force_reprocess=F
         else:
             results["slippage_analysis"] = {
                 "status": "SKIPPED_NO_DATA_FOR_ANALYSIS",
-                "message": "No processed data available for slippage analysis"
+                "message": f"No processed data available for {symbol} slippage analysis"
             }
-            print("Skipping slippage analysis due to no processed data available.")
+            print(f"Skipping {symbol} slippage analysis due to no processed data available.")
         
-        # Step 5: Latency Analysis
-        print("\n" + "="*40)
-        print("STEP 5: LATENCY ANALYSIS")
+        # Step 4: Latency Analysis
+        print(f"\n{'='*40}")
+        print(f"STEP 5: LATENCY ANALYSIS FOR {symbol}")
 
         if merged_df is not None:
             try:
-                latency_results = run_comprehensive_latency_analysis(
-                    parquet_path=processed_data_path,
+                latency_results = run_comprehensive_latency_analysis_with_data(
+                    df=merged_df,
                     output_dir="results",
-                    outlier_threshold=2.5
+                    outlier_threshold=2.5,
+                    symbol=symbol
                 )
                 results["latency_analysis"] = latency_results
             except Exception as e:
-                print(f"Latency analysis failed: {str(e)}")
+                print(f"{symbol} latency analysis failed: {str(e)}")
                 results["latency_analysis"] = {
                     "status": "ERROR",
                     "error": str(e)
@@ -162,24 +151,25 @@ def run_pipeline(exec_file='exec.csv', market_data_dir='data', force_reprocess=F
         else:
             results["latency_analysis"] = {
                 "status": "SKIPPED_NO_DATA_FOR_ANALYSIS",
-                "message": "No processed data available for latency analysis"
+                "message": f"No processed data available for {symbol} latency analysis"
             }
-            print("Skipping latency analysis due to no processed data available.")
+            print(f"Skipping {symbol} latency analysis due to no processed data available.")
         
-        # Step 6: Fee Analysis
-        print("\n" + "="*40)
-        print("STEP 6: FEE ANALYSIS")
+        # Step 5: Fee Analysis
+        print(f"\n{'='*40}")
+        print(f"STEP 6: FEE ANALYSIS FOR {symbol}")
 
         if merged_df is not None:
             try:
-                fee_results = run_comprehensive_fee_analysis(
-                    parquet_path=processed_data_path,
+                fee_results = run_comprehensive_fee_analysis_with_data(
+                    df=merged_df,
                     output_dir="results",
-                    outlier_threshold=2.0
+                    outlier_threshold=2.0,
+                    symbol=symbol
                 )
                 results["fee_analysis"] = fee_results
             except Exception as e:
-                print(f"Fee analysis failed: {str(e)}")
+                print(f"{symbol} fee analysis failed: {str(e)}")
                 results["fee_analysis"] = {
                     "status": "ERROR",
                     "error": str(e)
@@ -187,25 +177,26 @@ def run_pipeline(exec_file='exec.csv', market_data_dir='data', force_reprocess=F
         else:
             results["fee_analysis"] = {
                 "status": "SKIPPED_NO_DATA_FOR_ANALYSIS",
-                "message": "No processed data available for fee analysis"
+                "message": f"No processed data available for {symbol} fee analysis"
             }
-            print("Skipping fee analysis due to no processed data available.")
+            print(f"Skipping {symbol} fee analysis due to no processed data available.")
         
-        # Step 7: Spread Analysis
+        # Step 6: Spread Analysis
         if enable_spread_analysis:
-            print("\n" + "="*40)
-            print("STEP 7: SPREAD ANALYSIS")
+            print(f"\n{'='*40}")
+            print(f"STEP 7: SPREAD ANALYSIS FOR {symbol}")
             
             if merged_df is not None:
                 try:
-                    spread_results = run_comprehensive_spread_analysis(
-                        parquet_path=processed_data_path,
+                    spread_results = run_comprehensive_spread_analysis_with_data(
+                        df=merged_df,
                         output_dir="results",
-                        downsample_interval=100
+                        downsample_interval=100,
+                        symbol=symbol
                     )
                     results["visualization"] = spread_results
                 except Exception as e:
-                    print(f"Spread analysis failed: {str(e)}")
+                    print(f"{symbol} spread analysis failed: {str(e)}")
                     results["visualization"] = {
                         "status": "ERROR",
                         "error": str(e)
@@ -213,26 +204,25 @@ def run_pipeline(exec_file='exec.csv', market_data_dir='data', force_reprocess=F
             else:
                 results["visualization"] = {
                     "status": "SKIPPED_NO_DATA",
-                    "message": "No processed data available for spread analysis"
+                    "message": f"No processed data available for {symbol} spread analysis"
                 }
-                print("Skipping spread analysis due to no processed data available.")
+                print(f"Skipping {symbol} spread analysis due to no processed data available.")
         else:
             results["visualization"] = {
                 "status": "DISABLED",
                 "message": "Spread analysis step disabled"
             }
-            print("Spread analysis step disabled.")
+            print(f"{symbol} spread analysis step disabled.")
         
-        # Pipeline completion
-        pipeline_time = time.time() - pipeline_start_time
-        results["execution_time"] = pipeline_time
+        # Symbol pipeline completion
+        symbol_time = time.time() - symbol_start_time
+        results["execution_time"] = symbol_time
         results["pipeline_status"] = "COMPLETE"
         
-        print("\n" + "="*60)
-        print("PIPELINE EXECUTION SUMMARY")
-
-        print(f"Total execution time: {pipeline_time:.2f} seconds")
-        print(f"Data validation: {results['validation']['status']}")
+        print(f"\n{'='*60}")
+        print(f"{symbol} PIPELINE EXECUTION SUMMARY")
+        print(f"{'='*60}")
+        print(f"Execution time: {symbol_time:.2f} seconds")
         print(f"Data preparation: {results['data_preparation']['status']}")
         print(f"Market impact analysis: {results['market_impact_analysis']['status']}")
         print(f"Slippage analysis: {results['slippage_analysis']['status']}")
@@ -240,60 +230,112 @@ def run_pipeline(exec_file='exec.csv', market_data_dir='data', force_reprocess=F
         print(f"Fee analysis: {results['fee_analysis']['status']}")
         print(f"Spread analysis: {results['visualization']['status']}")
         
-        # Violations summary
-        if results['market_impact_analysis']['status'] == 'COMPLETE':
-            violations = results['market_impact_analysis']['violations']
-            total_violations = sum([v.get('count', 0) for v in violations.values()])
-            print(f"Total market impact violations found: {total_violations}")
-            
-            for violation_type, details in violations.items():
-                if details.get('count', 0) > 0:
-                    print(f"  - {violation_type}: {details['count']} violations")
+        return results
         
-        # Slippage analysis summary
-        if results['slippage_analysis']['status'] == 'COMPLETE':
-            slippage_stats = results['slippage_analysis']['summary_statistics']
-            correlations = results['slippage_analysis']['correlations']
-            print(f"Slippage analysis results:")
-            print(f"  - Total execution records analyzed: {slippage_stats.get('count', 0)}")
-            print(f"  - Mean slippage: {slippage_stats.get('mean_bps', 0):.2f} bps")
-            print(f"  - Median slippage: {slippage_stats.get('median_bps', 0):.2f} bps")
-            
-            # Show correlations
-            for analysis_type, details in correlations.items():
-                if details.get('correlation') is not None:
-                    print(f"  - {analysis_type.replace('_', ' ').title()}: r={details['correlation']:.3f}")
+    except Exception as e:
+        print(f"\n{symbol} pipeline execution failed: {str(e)}")
+        results["pipeline_status"] = "ERROR"
+        results["error_message"] = str(e)
+        results["execution_time"] = time.time() - symbol_start_time
+        return results
+
+def run_pipeline(exec_file='exec.csv', market_data_dir='data', force_reprocess=False, enable_spread_analysis=True, symbols=None):
+    """
+    Run the complete quantitative risk analysis pipeline
+    
+    Args:
+        exec_file: Path to execution data CSV file
+        market_data_dir: Directory containing market data files
+        force_reprocess: Whether to force reprocessing even if processed data exists
+        enable_spread_analysis: Whether to run the spread analysis step
+        symbols: List of symbols to process (if None, defaults to ['BTCUSDT'])
         
-        # Latency analysis summary
-        if results['latency_analysis']['status'] == 'COMPLETE':
-            latency_stats = results['latency_analysis']['summary_statistics']
-            outlier_counts = results['latency_analysis']['outlier_analysis']['outlier_counts']
-            print(f"Latency analysis results:")
-            
-            for latency_type, stats in latency_stats.items():
-                if stats:
-                    print(f"  - {latency_type.replace('_', ' ').title()}:")
-                    print(f"    Mean: {stats.get('mean_us', 0):.0f} μs, P95: {stats.get('p95_us', 0):.0f} μs")
-                    outlier_count = outlier_counts.get(latency_type, 0)
-                    if outlier_count > 0:
-                        total_count = stats.get('count', 0)
-                        outlier_pct = (outlier_count / total_count) * 100 if total_count > 0 else 0
-                        print(f"    Outliers: {outlier_count} ({outlier_pct:.1f}%)")
+    Returns:
+        dict: Pipeline execution results
+    """
+    print("="*60)
+    print("QUANTITATIVE RISK ANALYSIS PIPELINE")
+    print("="*60)
+
+    pipeline_start_time = time.time()
+    
+    # Default to BTCUSDT if no symbols specified
+    if symbols is None:
+        symbols = ['BTCUSDT']
+    
+    print(f"Processing symbols: {', '.join(symbols)}")
+    
+    results = {
+        "pipeline_status": "RUNNING",
+        "validation": None,
+        "symbols": {},
+        "execution_time": None,
+        "total_symbols": len(symbols),
+        "successful_symbols": 0,
+        "failed_symbols": 0
+    }
+    
+    try:
+        # Step 1: Data Validation (run once for all symbols)
+        print("\n" + "="*40)
+        print("STEP 1: DATA VALIDATION")
+
         
-        # Fee analysis summary
-        if results['fee_analysis']['status'] == 'COMPLETE':
-            fee_stats = results['fee_analysis']['summary_statistics']
-            fee_correlations = results['fee_analysis']['correlations']
-            outlier_analysis = results['fee_analysis']['outlier_analysis']
-            print(f"Fee analysis results:")
-            print(f"  - Total execution records analyzed: {fee_stats.get('count', 0)}")
-            print(f"  - Mean fee: {fee_stats.get('fee_stats', {}).get('mean', 0):.6f}")
-            print(f"  - Fee outliers: {outlier_analysis.get('outlier_count', 0)} ({outlier_analysis.get('outlier_percentage', 0):.1f}%)")
+        validation_results = validate_exec_csv(Path(market_data_dir) / exec_file)
+        results["validation"] = {
+            "status": "COMPLETE" if validation_results["summary"] == "Validation Report for exec.csv" else "ERROR",
+            "missing_values_count": len(validation_results["missing_values"]),
+            "data_type_issues_count": len(validation_results["data_type_issues"]),
+            "value_range_issues_count": len(validation_results["value_range_issues"]),
+            "anomalies_count": len(validation_results["anomalies"])
+        }
+        
+        # Process each symbol
+        for symbol in symbols:
+            symbol_results = run_symbol_pipeline(
+                symbol=symbol,
+                exec_file=exec_file,
+                market_data_dir=market_data_dir,
+                force_reprocess=force_reprocess,
+                enable_spread_analysis=enable_spread_analysis
+            )
             
-            # Show correlations
-            for analysis_type, details in fee_correlations.items():
-                if details.get('correlation') is not None:
-                    print(f"  - {analysis_type.replace('_', ' ').title()}: r={details['correlation']:.3f}")
+            results["symbols"][symbol] = symbol_results
+            
+            if symbol_results["pipeline_status"] == "COMPLETE":
+                results["successful_symbols"] += 1
+            else:
+                results["failed_symbols"] += 1
+        
+        # Pipeline completion
+        pipeline_time = time.time() - pipeline_start_time
+        results["execution_time"] = pipeline_time
+        results["pipeline_status"] = "COMPLETE"
+        
+        print("\n" + "="*60)
+        print("OVERALL PIPELINE EXECUTION SUMMARY")
+        print("="*60)
+        print(f"Total execution time: {pipeline_time:.2f} seconds")
+        print(f"Symbols processed: {results['total_symbols']}")
+        print(f"Successful: {results['successful_symbols']}")
+        print(f"Failed: {results['failed_symbols']}")
+        print(f"Data validation: {results['validation']['status']}")
+        
+        # Print summary for each symbol
+        for symbol, symbol_results in results["symbols"].items():
+            print(f"\n{symbol}:")
+            print(f"  Status: {symbol_results['pipeline_status']}")
+            print(f"  Execution time: {symbol_results.get('execution_time', 0):.2f} seconds")
+            if symbol_results['pipeline_status'] == 'COMPLETE':
+                # Print analysis summaries for successful symbols
+                if symbol_results.get('market_impact_analysis', {}).get('status') == 'COMPLETE':
+                    violations = symbol_results['market_impact_analysis']['violations']
+                    total_violations = sum([v.get('count', 0) for v in violations.values()])
+                    print(f"  Market impact violations: {total_violations}")
+                
+                if symbol_results.get('slippage_analysis', {}).get('status') == 'COMPLETE':
+                    slippage_stats = symbol_results['slippage_analysis']['summary_statistics']
+                    print(f"  Slippage (mean): {slippage_stats.get('mean_bps', 0):.2f} bps")
         
         print("="*60)
         
@@ -336,6 +378,12 @@ def main():
         action='store_true',
         help='Disable spread analysis step'
     )
+    parser.add_argument(
+        '--symbols',
+        nargs='*',
+        default=['BTCUSDT', 'DOTUSDT', 'EOSUSDT', 'ETHUSDT', 'XRPUSDT'],
+        help='Trading symbols to process (default: all symbols). Available: BTCUSDT DOTUSDT EOSUSDT ETHUSDT XRPUSDT. Use --symbols BTCUSDT to process only BTCUSDT.'
+    )
     
     args = parser.parse_args()
     
@@ -344,7 +392,8 @@ def main():
         exec_file=args.exec_file,
         market_data_dir=args.market_data_dir,
         force_reprocess=args.force_reprocess,
-        enable_spread_analysis=not args.no_spread_analysis
+        enable_spread_analysis=not args.no_spread_analysis,
+        symbols=args.symbols
     )
     
     # Exit with appropriate code

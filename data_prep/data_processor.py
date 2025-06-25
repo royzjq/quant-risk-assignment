@@ -3,7 +3,7 @@ import numpy as np
 from pathlib import Path
 import time
 
-def load_exec_data(file_path='exec.csv'):
+def load_exec_data(file_path: Path = Path('exec.csv')):
     """
     Load execution data using Polars
     """
@@ -25,13 +25,39 @@ def load_market_data(file_path):
     print(f"Loaded {len(df)} market data records in {load_time:.2f} seconds")
     return df
 
-def filter_btcusdt_exec(exec_df):
+def filter_symbol_exec(exec_df, symbol):
     """
-    Filter execution records containing BTCUSDT
+    Filter execution records containing specified symbol
+    
+    Args:
+        exec_df: DataFrame with execution data
+        symbol: Symbol to filter (e.g., 'BTCUSDT', 'ETHUSDT')
     """
-    btc_exec = exec_df.filter(pl.col('sym').str.contains('BTCUSDT'))
-    print(f"Found {len(btc_exec)} BTCUSDT execution records")
-    return btc_exec
+    symbol_exec = exec_df.filter(pl.col('sym').str.contains(symbol))
+    print(f"Found {len(symbol_exec)} {symbol} execution records")
+    return symbol_exec
+
+def find_market_data_file(market_data_dir, symbol):
+    """
+    Find market data file for the specified symbol
+    
+    Args:
+        market_data_dir: Directory containing market data files
+        symbol: Symbol to find (e.g., 'BTCUSDT', 'ETHUSDT')
+        
+    Returns:
+        Path to the market data file or None if not found
+    """
+    data_dir = Path(market_data_dir)
+    symbol_files = list(data_dir.glob(f'*{symbol}*.csv'))
+    
+    if not symbol_files:
+        print(f"No {symbol} market data file found in data directory")
+        return None
+    
+    symbol_file = symbol_files[0]  # Use the first file found
+    print(f"Using market data file: {symbol_file}")
+    return symbol_file
 
 def convert_etm_to_microseconds(exec_df):
     """
@@ -359,9 +385,14 @@ def analyze_exec_coverage(merged_df, original_exec_df):
     
     return coverage_status, exec_matched
 
-def prepare_btcusdt_data(exec_file='exec.csv', market_data_dir='data'):
+def prepare_symbol_data(exec_file='exec.csv', market_data_dir='data', symbol='BTCUSDT'):
     """
-    Complete data preparation pipeline for BTCUSDT data
+    Complete data preparation pipeline for specified symbol data
+    
+    Args:
+        exec_file: Path to execution data CSV file
+        market_data_dir: Directory containing market data files
+        symbol: Symbol to process (e.g., 'BTCUSDT', 'ETHUSDT')
     
     Returns:
         merged_df: Polars DataFrame with merged market and execution data
@@ -371,40 +402,36 @@ def prepare_btcusdt_data(exec_file='exec.csv', market_data_dir='data'):
     
     try:
         # 1. Load data
-        exec_df = load_exec_data(exec_file)
+        exec_file_path = Path(market_data_dir) / exec_file
+        exec_df = load_exec_data(exec_file_path)
         
-        # Find BTCUSDT market data file
-        data_dir = Path(market_data_dir)
-        btc_files = list(data_dir.glob('*BTCUSDT*.csv'))
+        # Find symbol market data file
+        market_file = find_market_data_file(market_data_dir, symbol)
+        if market_file is None:
+            raise FileNotFoundError(f"No {symbol} market data file found in data directory")
         
-        if not btc_files:
-            raise FileNotFoundError("No BTCUSDT market data file found in data directory")
+        market_df = load_market_data(market_file)
         
-        btc_market_file = btc_files[0]  # Use the first file found
-        print(f"Using market data file: {btc_market_file}")
+        # 2. Filter symbol execution records
+        symbol_exec_df = filter_symbol_exec(exec_df, symbol)
         
-        market_df = load_market_data(btc_market_file)
-        
-        # 2. Filter BTCUSDT execution records
-        btc_exec_df = filter_btcusdt_exec(exec_df)
-        
-        if len(btc_exec_df) == 0:
-            raise ValueError("No BTCUSDT execution records found")
+        if len(symbol_exec_df) == 0:
+            raise ValueError(f"No {symbol} execution records found")
         
         # 3. Convert timestamps
-        btc_exec_df = convert_etm_to_microseconds(btc_exec_df)
+        symbol_exec_df = convert_etm_to_microseconds(symbol_exec_df)
         
         # 4. Preprocess execution data
-        btc_exec_df = preprocess_exec_data(btc_exec_df)
+        symbol_exec_df = preprocess_exec_data(symbol_exec_df)
         
         # 5. Calculate market mid price
         market_df = calculate_mid_price(market_df)
         
         # 6. Filter exec records by market time range
-        filtered_exec_df = filter_exec_by_market_timerange(btc_exec_df, market_df)
+        filtered_exec_df = filter_exec_by_market_timerange(symbol_exec_df, market_df)
         
         if len(filtered_exec_df) == 0:
-            raise ValueError("No execution records remain after time range filtering")
+            raise ValueError(f"No {symbol} execution records remain after time range filtering")
         
         # 7. Merge data (market as base)
         merge_start_time = time.time()
@@ -416,13 +443,23 @@ def prepare_btcusdt_data(exec_file='exec.csv', market_data_dir='data'):
         coverage_status, exec_matched = analyze_exec_coverage(merged_df, filtered_exec_df)
         
         total_time = time.time() - total_start_time
-        print(f"\nData preparation completed in {total_time:.2f} seconds")
+        print(f"\nData preparation for {symbol} completed in {total_time:.2f} seconds")
         
         return merged_df, coverage_status
         
     except Exception as e:
-        print(f"Error during data preparation: {str(e)}")
+        print(f"Error during {symbol} data preparation: {str(e)}")
         return None, "ERROR"
+
+def prepare_btcusdt_data(exec_file='exec.csv', market_data_dir='data'):
+    """
+    Complete data preparation pipeline for BTCUSDT data (backward compatibility)
+    
+    Returns:
+        merged_df: Polars DataFrame with merged market and execution data
+        coverage_status: String indicating coverage completeness
+    """
+    return prepare_symbol_data(exec_file, market_data_dir, 'BTCUSDT')
 
 def save_to_parquet(df, output_path):
     """
@@ -430,6 +467,10 @@ def save_to_parquet(df, output_path):
     """
     print(f"Saving data to {output_path}...")
     start_time = time.time()
+    
+    # Ensure output directory exists
+    Path(output_path).parent.mkdir(parents=True, exist_ok=True)
+    
     df.write_parquet(output_path)
     save_time = time.time() - start_time
     print(f"Data saved to {output_path} in {save_time:.2f} seconds") 

@@ -92,7 +92,7 @@ def prepare_plot_data(df):
     return market_data, execution_data
 
 
-def create_spread_visualization(market_data, execution_data, output_dir='results/images', downsample_interval=None):
+def create_spread_visualization(market_data, execution_data, output_dir='results/images', downsample_interval=None, symbol="BTCUSDT"):
     """
     Create and save the spread visualization using Plotly
     
@@ -101,6 +101,7 @@ def create_spread_visualization(market_data, execution_data, output_dir='results
         execution_data: Polars DataFrame with execution records
         output_dir: Directory to save the plot
         downsample_interval: If not None, take every Nth market data point for plotting to speed up.
+        symbol: Trading symbol for file naming and title
     """
     print("Creating spread visualization...")
     
@@ -137,7 +138,7 @@ def create_spread_visualization(market_data, execution_data, output_dir='results
                                  
     # Update layout
     fig.update_layout(
-        title_text='BTCUSDT Bid/Ask Spreads Over Time with Executions',
+        title_text=f'{symbol} Bid/Ask Spreads Over Time with Executions',
         xaxis_title_text='Time',
         yaxis_title_text='Spread (USDT) relative to Mid Price',
         hovermode='x unified', # Show hover info for all traces at a given x-coordinate
@@ -146,9 +147,10 @@ def create_spread_visualization(market_data, execution_data, output_dir='results
         yaxis_zeroline=True, yaxis_zerolinecolor='lightgray', yaxis_zerolinewidth=1 # Show zero line for clarity
     )
 
-    # Save the plot
-    output_file_png = Path(output_dir) / 'btcusdt_spread_execution_visualization.png'
-    output_file_html = Path(output_dir) / 'btcusdt_spread_execution_visualization.html' # Plotly can save interactive HTML
+    # Save the plot with symbol prefix
+    symbol_lower = symbol.lower()
+    output_file_png = Path(output_dir) / f'{symbol_lower}_spread_execution_visualization.png'
+    output_file_html = Path(output_dir) / f'{symbol_lower}_spread_execution_visualization.html' # Plotly can save interactive HTML
 
     try:
         fig.write_image(str(output_file_png), scale=2) # scale for higher resolution
@@ -162,7 +164,7 @@ def create_spread_visualization(market_data, execution_data, output_dir='results
     return output_file_png
 
 
-def create_bidask_spread_distribution(market_data, execution_data, output_dir='results/images'):
+def create_bidask_spread_distribution(market_data, execution_data, output_dir='results/images', df=None, symbol="BTCUSDT"):
     """
     Create bid-ask spread distribution chart with execution count overlay
     
@@ -170,14 +172,17 @@ def create_bidask_spread_distribution(market_data, execution_data, output_dir='r
         market_data: Polars DataFrame with market data and spreads
         execution_data: Polars DataFrame with execution records
         output_dir: Directory to save the plot
+        df: Optional pre-loaded DataFrame with processed data
+        symbol: Trading symbol for file naming and title
     """
     print("Creating bid-ask spread distribution chart...")
     
     # Ensure output directory exists
     Path(output_dir).mkdir(parents=True, exist_ok=True)
     
-    # Load original data to calculate bid-ask spread
-    df = load_processed_data()
+    # Load original data to calculate bid-ask spread if not provided
+    if df is None:
+        df = load_processed_data()
     
     # Calculate bid-ask spread (positive values)
     df_with_bidask_spread = df.with_columns([
@@ -220,15 +225,16 @@ def create_bidask_spread_distribution(market_data, execution_data, output_dir='r
     
     # Update layout
     fig.update_layout(
-        title='Bid-Ask Spread Distribution',
+        title=f'{symbol} Bid-Ask Spread Distribution',
         xaxis_title='Bid-Ask Spread (USDT)',
         yaxis_title='Frequency',
         template='plotly_white'
     )
     
-    # Save the plot
-    output_file_png = Path(output_dir) / 'bidask_spread_distribution.png'
-    output_file_html = Path(output_dir) / 'bidask_spread_distribution.html'
+    # Save the plot with symbol prefix
+    symbol_lower = symbol.lower()
+    output_file_png = Path(output_dir) / f'{symbol_lower}_bidask_spread_distribution.png'
+    output_file_html = Path(output_dir) / f'{symbol_lower}_bidask_spread_distribution.html'
     
     try:
         fig.write_image(str(output_file_png), scale=2)
@@ -240,18 +246,21 @@ def create_bidask_spread_distribution(market_data, execution_data, output_dir='r
     print(f"Interactive HTML saved to {output_file_html}")
 
 
-def export_large_spread_trades(threshold=0.2, output_dir='results'):
+def export_large_spread_trades(threshold=0.2, output_dir='results', df=None, symbol="BTCUSDT"):
     """
     Export trades that occurred when bid-ask spread was larger than the threshold
     
     Args:
         threshold: Spread threshold in USDT
         output_dir: Directory to save the output file
+        df: Optional pre-loaded DataFrame with processed data
+        symbol: Trading symbol for file naming
     """
     print(f"Exporting trades with bid-ask spread > {threshold} USDT...")
     
-    # Load processed data
-    df = load_processed_data()
+    # Load processed data if not provided
+    if df is None:
+        df = load_processed_data()
     
     # Calculate bid-ask spread and filter for large spreads
     df_with_bidask_spread = df.with_columns([
@@ -294,9 +303,9 @@ def export_large_spread_trades(threshold=0.2, output_dir='results'):
         }
         trades_data["trades"].append(trade)
     
-    # Export to JSON
+    # Export to JSON with symbol prefix
     timestamp = time.strftime("%Y%m%d_%H%M%S")
-    output_file = Path(output_dir) / f'trade-with-large-spread-{threshold}usdt_{timestamp}.json'
+    output_file = Path(output_dir) / f'{symbol.lower()}_large_spread_trades_{threshold}usdt_{timestamp}.json'
     
     Path(output_dir).mkdir(parents=True, exist_ok=True)
     with open(output_file, 'w', encoding='utf-8') as f:
@@ -305,22 +314,24 @@ def export_large_spread_trades(threshold=0.2, output_dir='results'):
     print(f"Exported {len(large_spread_trades)} trades with large spreads to {output_file}")
 
 
-def generate_summary_stats(market_data, execution_data):
+def generate_summary_stats(market_data, execution_data, df_with_spreads=None):
     """
     Generate summary statistics for spreads and executions
     
     Args:
         market_data: Polars DataFrame with market data
         execution_data: Polars DataFrame with execution data
+        df_with_spreads: Optional pre-computed DataFrame with spreads
         
     Returns:
         dict: Summary statistics
     """
     print("Generating summary statistics...")
     
-    # Load full data for complete statistics
-    df = load_processed_data()
-    df_with_spreads = calculate_spreads(df)
+    # Use provided data or load full data for complete statistics
+    if df_with_spreads is None:
+        df = load_processed_data()
+        df_with_spreads = calculate_spreads(df)
     
     # Calculate bid-ask spread
     df_with_bidask = df_with_spreads.with_columns([
@@ -390,6 +401,36 @@ def run_comprehensive_spread_analysis(parquet_path="results/btcusdt_processed_da
         # 1. Load processed data
         df = load_processed_data(parquet_path)
         
+        return run_comprehensive_spread_analysis_with_data(df, output_dir, downsample_interval, start_time)
+        
+    except Exception as e:
+        print(f"Spread analysis failed: {str(e)}")
+        return {"status": "ERROR", "error": str(e)}
+
+def run_comprehensive_spread_analysis_with_data(df, output_dir="results", downsample_interval=100, start_time=None, symbol="BTCUSDT"):
+    """
+    Run comprehensive spread analysis with pre-loaded data
+    
+    Args:
+        df: Pre-loaded Polars DataFrame with processed data
+        output_dir: Directory to save outputs
+        downsample_interval: Downsampling interval for visualization
+        start_time: Optional start time for timing calculations
+        symbol: Trading symbol for file naming
+        
+    Returns:
+        dict: Analysis results and statistics
+    """
+    print("="*60)
+    print("COMPREHENSIVE SPREAD ANALYSIS")
+    print("="*60)
+    
+    if start_time is None:
+        start_time = time.time()
+    
+    try:
+        print(f"Using processed data with {len(df)} records.")
+        
         # 2. Calculate spreads
         df_with_spreads = calculate_spreads(df)
         
@@ -397,20 +438,20 @@ def run_comprehensive_spread_analysis(parquet_path="results/btcusdt_processed_da
         market_data, execution_data = prepare_plot_data(df_with_spreads)
         
         # 4. Generate summary statistics
-        stats = generate_summary_stats(market_data, execution_data)
+        stats = generate_summary_stats(market_data, execution_data, df_with_spreads)
         
         # 5. Create visualizations
         print("\nGenerating visualizations...")
         images_dir = f"{output_dir}/images"
         
         # Spread time series
-        create_spread_visualization(market_data, execution_data, images_dir, downsample_interval)
+        create_spread_visualization(market_data, execution_data, images_dir, downsample_interval, symbol)
         
         # Spread distribution
-        create_bidask_spread_distribution(market_data, execution_data, images_dir)
+        create_bidask_spread_distribution(market_data, execution_data, images_dir, df, symbol)
         
         # 6. Export large spread trades
-        export_large_spread_trades(threshold=0.2, output_dir=output_dir)
+        export_large_spread_trades(threshold=0.2, output_dir=output_dir, df=df, symbol=symbol)
         
         # 7. Compile results
         results = {
@@ -418,8 +459,8 @@ def run_comprehensive_spread_analysis(parquet_path="results/btcusdt_processed_da
             "execution_time": time.time() - start_time,
             "summary_statistics": stats,
             "visualizations": {
-                "spread_time_series": f"{images_dir}/btcusdt_spread_execution_visualization.html",
-                "spread_distribution": f"{images_dir}/bidask_spread_distribution.html"
+                "spread_time_series": f"{images_dir}/{symbol.lower()}_spread_execution_visualization.html",
+                "spread_distribution": f"{images_dir}/{symbol.lower()}_bidask_spread_distribution.html"
             }
         }
         

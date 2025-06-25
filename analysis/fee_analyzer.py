@@ -100,7 +100,7 @@ def detect_fee_outliers(fee_df, threshold=2.0):
     
     return outlier_df
 
-def create_fee_vs_qty_plot(fee_df, output_dir="results/images"):
+def create_fee_vs_qty_plot(fee_df, output_dir="results/images", symbol="BTCUSDT"):
     """
     Create scatter plot of fee vs quantity with correlation and regression line
     """
@@ -184,7 +184,7 @@ def create_fee_vs_qty_plot(fee_df, output_dir="results/images"):
     )
     
     fig.update_layout(
-        title="Fee vs Quantity Analysis",
+        title=f"{symbol} Fee vs Quantity Analysis",
         xaxis_title="Quantity (eqty)",
         yaxis_title="Fee",
         template="plotly_white",
@@ -192,18 +192,19 @@ def create_fee_vs_qty_plot(fee_df, output_dir="results/images"):
         height=500
     )
     
-    # Save plot
+    # Save plot with symbol prefix
     Path(output_dir).mkdir(parents=True, exist_ok=True)
-    fig.write_html(f"{output_dir}/fee_vs_qty.html")
+    symbol_lower = symbol.lower()
+    fig.write_html(f"{output_dir}/{symbol_lower}_fee_vs_qty.html")
     try:
-        fig.write_image(f"{output_dir}/fee_vs_qty.png", width=800, height=500, scale=2)
+        fig.write_image(f"{output_dir}/{symbol_lower}_fee_vs_qty.png", width=800, height=500, scale=2)
     except:
         print("Warning: Could not save PNG image. HTML version saved successfully.")
     
     print(f"Fee vs quantity plot saved to {output_dir}/")
     return fig, correlation, function_text
 
-def create_fee_vs_vwap_plot(fee_df, output_dir="results/images"):
+def create_fee_vs_vwap_plot(fee_df, output_dir="results/images", symbol="BTCUSDT"):
     """
     Create scatter plot of fee vs VWAP with correlation and regression line
     """
@@ -287,7 +288,7 @@ def create_fee_vs_vwap_plot(fee_df, output_dir="results/images"):
     )
     
     fig.update_layout(
-        title="Fee vs VWAP Analysis",
+        title=f"{symbol} Fee vs VWAP Analysis",
         xaxis_title="VWAP",
         yaxis_title="Fee",
         template="plotly_white",
@@ -295,18 +296,19 @@ def create_fee_vs_vwap_plot(fee_df, output_dir="results/images"):
         height=500
     )
     
-    # Save plot
+    # Save plot with symbol prefix
     Path(output_dir).mkdir(parents=True, exist_ok=True)
-    fig.write_html(f"{output_dir}/fee_vs_vwap.html")
+    symbol_lower = symbol.lower()
+    fig.write_html(f"{output_dir}/{symbol_lower}_fee_vs_vwap.html")
     try:
-        fig.write_image(f"{output_dir}/fee_vs_vwap.png", width=800, height=500, scale=2)
+        fig.write_image(f"{output_dir}/{symbol_lower}_fee_vs_vwap.png", width=800, height=500, scale=2)
     except:
         print("Warning: Could not save PNG image. HTML version saved successfully.")
     
     print(f"Fee vs VWAP plot saved to {output_dir}/")
     return fig, correlation, function_text
 
-def create_fee_vs_notional_plot(fee_df, output_dir="results/images"):
+def create_fee_vs_notional_plot(fee_df, output_dir="results/images", symbol="BTCUSDT"):
     """
     Create scatter plot of fee vs notional value with correlation and regression line
     """
@@ -390,7 +392,7 @@ def create_fee_vs_notional_plot(fee_df, output_dir="results/images"):
     )
     
     fig.update_layout(
-        title="Fee vs Notional Value Analysis",
+        title=f"{symbol} Fee vs Notional Value Analysis",
         xaxis_title="Notional Value (qty × vwap)",
         yaxis_title="Fee",
         template="plotly_white",
@@ -398,18 +400,19 @@ def create_fee_vs_notional_plot(fee_df, output_dir="results/images"):
         height=500
     )
     
-    # Save plot
+    # Save plot with symbol prefix
     Path(output_dir).mkdir(parents=True, exist_ok=True)
-    fig.write_html(f"{output_dir}/fee_vs_notional.html")
+    symbol_lower = symbol.lower()
+    fig.write_html(f"{output_dir}/{symbol_lower}_fee_vs_notional.html")
     try:
-        fig.write_image(f"{output_dir}/fee_vs_notional.png", width=800, height=500, scale=2)
+        fig.write_image(f"{output_dir}/{symbol_lower}_fee_vs_notional.png", width=800, height=500, scale=2)
     except:
         print("Warning: Could not save PNG image. HTML version saved successfully.")
     
     print(f"Fee vs notional value plot saved to {output_dir}/")
     return fig, correlation, function_text
 
-def create_fee_distribution_plot(fee_df, output_dir="results/images"):
+def create_fee_distribution_plot(fee_df, output_dir="results/images", symbol="BTCUSDT"):
     """
     Create fee distribution plot with outliers highlighted
     """
@@ -466,7 +469,7 @@ def create_fee_distribution_plot(fee_df, output_dir="results/images"):
     )
     
     fig.update_layout(
-        title="Fee Distribution with Outliers",
+        title=f"{symbol} Fee Distribution with Outliers",
         xaxis_title="Fee",
         yaxis_title="Frequency",
         template="plotly_white",
@@ -474,60 +477,68 @@ def create_fee_distribution_plot(fee_df, output_dir="results/images"):
         height=500
     )
     
-    # Save plot
+    # Save plot with symbol prefix
     Path(output_dir).mkdir(parents=True, exist_ok=True)
-    fig.write_html(f"{output_dir}/fee_distribution.html")
+    symbol_lower = symbol.lower()
+    fig.write_html(f"{output_dir}/{symbol_lower}_fee_distribution.html")
     try:
-        fig.write_image(f"{output_dir}/fee_distribution.png", width=800, height=500, scale=2)
+        fig.write_image(f"{output_dir}/{symbol_lower}_fee_distribution.png", width=800, height=500, scale=2)
     except:
         print("Warning: Could not save PNG image. HTML version saved successfully.")
     
     print(f"Fee distribution plot saved to {output_dir}/")
     return fig
 
-def analyze_fee_outliers(fee_df, output_dir="results"):
+def analyze_fee_outliers(fee_df, output_dir="results", symbol="BTCUSDT"):
     """
-    Analyze fee outliers to understand potential causes
+    Analyze fee outliers and export detailed information
+    
+    Args:
+        fee_df: DataFrame with fee analysis data and outlier flags
+        output_dir: Directory to save the output file
+        symbol: Trading symbol for file naming
     """
     print("Analyzing fee outliers...")
     
-    outliers = fee_df.filter(pl.col('is_outlier'))
-    normal = fee_df.filter(~pl.col('is_outlier'))
+    # Separate outliers and normal records
+    outliers = fee_df.filter(pl.col('is_outlier') == True)
+    normal_records = fee_df.filter(pl.col('is_outlier') == False)
     
-    if len(outliers) == 0:
-        print("No fee outliers found")
-        return {}
-    
+    # Calculate statistics
     analysis = {
         "outlier_count": len(outliers),
-        "total_count": len(fee_df),
-        "outlier_percentage": (len(outliers) / len(fee_df)) * 100,
-        "outlier_stats": {
-            "mean_fee": float(outliers['fee'].mean()),
-            "median_fee": float(outliers['fee'].median()),
-            "min_fee": float(outliers['fee'].min()),
-            "max_fee": float(outliers['fee'].max()),
-            "mean_qty": float(outliers['eqty'].mean()),
-            "mean_vwap": float(outliers['vwap'].mean()),
-            "mean_notional": float(outliers['notional_value'].mean()),
-            "mean_fee_rate": float(outliers['fee_rate'].mean()),
-            "mean_fee_percentage": float(outliers['fee_percentage'].mean())
-        },
-        "normal_stats": {
-            "mean_fee": float(normal['fee'].mean()),
-            "median_fee": float(normal['fee'].median()),
-            "mean_qty": float(normal['eqty'].mean()),
-            "mean_vwap": float(normal['vwap'].mean()),
-            "mean_notional": float(normal['notional_value'].mean()),
-            "mean_fee_rate": float(normal['fee_rate'].mean()),
-            "mean_fee_percentage": float(normal['fee_percentage'].mean())
-        }
+        "total_records": len(fee_df),
+        "outlier_percentage": (len(outliers) / len(fee_df)) * 100 if len(fee_df) > 0 else 0,
+        "outlier_stats": {},
+        "normal_stats": {},
+        "outlier_records": []
     }
     
-    # Export detailed outlier records
-    timestamp = time.strftime("%Y%m%d_%H%M%S")
-    outliers_file = f"{output_dir}/fee_outliers_{timestamp}.json"
+    if len(outliers) > 0:
+        outlier_fees = outliers['fee'].to_numpy()
+        analysis["outlier_stats"] = {
+            "mean_fee": float(np.mean(outlier_fees)),
+            "median_fee": float(np.median(outlier_fees)),
+            "std_fee": float(np.std(outlier_fees)),
+            "min_fee": float(np.min(outlier_fees)),
+            "max_fee": float(np.max(outlier_fees))
+        }
     
+    if len(normal_records) > 0:
+        normal_fees = normal_records['fee'].to_numpy()
+        analysis["normal_stats"] = {
+            "mean_fee": float(np.mean(normal_fees)),
+            "median_fee": float(np.median(normal_fees)),
+            "std_fee": float(np.std(normal_fees)),
+            "min_fee": float(np.min(normal_fees)),
+            "max_fee": float(np.max(normal_fees))
+        }
+    
+    # Export to JSON with timestamp
+    timestamp = time.strftime("%Y%m%d_%H%M%S")
+    outliers_file = f"{output_dir}/{symbol.lower()}_fee_outliers_{timestamp}.json"
+    
+    # Convert outlier records to list of dicts
     outlier_records = []
     for row in outliers.iter_rows(named=True):
         outlier_record = {
@@ -621,6 +632,31 @@ def run_comprehensive_fee_analysis(parquet_path="results/btcusdt_processed_data.
     # 1. Load processed data
     df = load_processed_data(parquet_path)
     
+    return run_comprehensive_fee_analysis_with_data(df, output_dir, outlier_threshold, start_time)
+
+def run_comprehensive_fee_analysis_with_data(df, output_dir="results", outlier_threshold=2.0, start_time=None, symbol="BTCUSDT"):
+    """
+    Run comprehensive fee analysis with pre-loaded data
+    
+    Args:
+        df: Pre-loaded Polars DataFrame with processed data
+        output_dir: Directory to save outputs
+        outlier_threshold: Z-score threshold for outlier detection (default: 2.0 sigma)
+        start_time: Optional start time for timing calculations
+        symbol: Trading symbol for file naming
+        
+    Returns:
+        dict: Analysis results and statistics
+    """
+    print("="*60)
+    print("COMPREHENSIVE FEE ANALYSIS")
+    print("="*60)
+    
+    if start_time is None:
+        start_time = time.time()
+    
+    print(f"Using processed data with {len(df)} records.")
+    
     # 2. Prepare fee analysis data
     fee_df = prepare_fee_analysis_data(df)
     if fee_df is None:
@@ -637,25 +673,25 @@ def run_comprehensive_fee_analysis(parquet_path="results/btcusdt_processed_data.
     images_dir = f"{output_dir}/images"
     
     # Fee distribution
-    dist_fig = create_fee_distribution_plot(fee_df, images_dir)
+    dist_fig = create_fee_distribution_plot(fee_df, images_dir, symbol)
     
     # Fee vs quantity
-    qty_result = create_fee_vs_qty_plot(fee_df, images_dir)
+    qty_result = create_fee_vs_qty_plot(fee_df, images_dir, symbol)
     qty_correlation = qty_result[1] if qty_result else None
     qty_function = qty_result[2] if qty_result else None
     
     # Fee vs VWAP
-    vwap_result = create_fee_vs_vwap_plot(fee_df, images_dir)
+    vwap_result = create_fee_vs_vwap_plot(fee_df, images_dir, symbol)
     vwap_correlation = vwap_result[1] if vwap_result else None
     vwap_function = vwap_result[2] if vwap_result else None
     
     # Fee vs notional value
-    notional_result = create_fee_vs_notional_plot(fee_df, images_dir)
+    notional_result = create_fee_vs_notional_plot(fee_df, images_dir, symbol)
     notional_correlation = notional_result[1] if notional_result else None
     notional_function = notional_result[2] if notional_result else None
     
     # 6. Analyze outliers
-    outlier_analysis = analyze_fee_outliers(fee_df, output_dir)
+    outlier_analysis = analyze_fee_outliers(fee_df, output_dir, symbol)
     
     # 7. Compile results
     results = {
@@ -678,10 +714,10 @@ def run_comprehensive_fee_analysis(parquet_path="results/btcusdt_processed_data.
         },
         "outlier_analysis": outlier_analysis,
         "visualizations": {
-            "fee_distribution": f"{images_dir}/fee_distribution.html",
-            "fee_vs_qty": f"{images_dir}/fee_vs_qty.html",
-            "fee_vs_vwap": f"{images_dir}/fee_vs_vwap.html",
-            "fee_vs_notional": f"{images_dir}/fee_vs_notional.html"
+            "fee_distribution": f"{images_dir}/{symbol.lower()}_fee_distribution.html",
+            "fee_vs_qty": f"{images_dir}/{symbol.lower()}_fee_vs_qty.html",
+            "fee_vs_vwap": f"{images_dir}/{symbol.lower()}_fee_vs_vwap.html",
+            "fee_vs_notional": f"{images_dir}/{symbol.lower()}_fee_vs_notional.html"
         }
     }
     

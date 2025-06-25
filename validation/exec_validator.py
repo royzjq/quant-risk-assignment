@@ -1,13 +1,14 @@
 import pandas as pd
 import numpy as np
 import json
+from pathlib import Path
 
-def validate_exec_csv(file_path="exec.csv"):
+def validate_exec_csv(file_path: Path = Path("exec.csv")):
     """
     Validates the content of exec.csv for reasonableness and anomalies.
 
     Args:
-        file_path (str): The path to the exec.csv file.
+        file_path (Path): The path to the exec.csv file.
 
     Returns:
         dict: A dictionary containing validation results and detected anomalies.

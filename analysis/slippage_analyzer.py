@@ -112,7 +112,7 @@ def calculate_liquidity_measure(df, depth=10):
     
     return df_with_liquidity
 
-def create_slippage_distribution_plot(slippage_df, output_dir="results/images"):
+def create_slippage_distribution_plot(slippage_df, output_dir="results/images", symbol="BTCUSDT"):
     """
     Create slippage distribution plot
     """
@@ -153,7 +153,7 @@ def create_slippage_distribution_plot(slippage_df, output_dir="results/images"):
     )
     
     fig.update_layout(
-        title="Slippage Distribution (Basis Points)",
+        title=f"{symbol} Slippage Distribution (Basis Points)",
         xaxis_title="Slippage (bps)",
         yaxis_title="Frequency",
         showlegend=False,
@@ -162,18 +162,19 @@ def create_slippage_distribution_plot(slippage_df, output_dir="results/images"):
         height=500
     )
     
-    # Save plot
+    # Save plot with symbol prefix
     Path(output_dir).mkdir(parents=True, exist_ok=True)
-    fig.write_html(f"{output_dir}/slippage_distribution.html")
+    symbol_lower = symbol.lower()
+    fig.write_html(f"{output_dir}/{symbol_lower}_slippage_distribution.html")
     try:
-        fig.write_image(f"{output_dir}/slippage_distribution.png", width=800, height=500, scale=2)
+        fig.write_image(f"{output_dir}/{symbol_lower}_slippage_distribution.png", width=800, height=500, scale=2)
     except:
         print("Warning: Could not save PNG image. HTML version saved successfully.")
     
     print(f"Slippage distribution plot saved to {output_dir}/")
     return fig
 
-def create_slippage_vs_order_size_plot(slippage_df, output_dir="results/images"):
+def create_slippage_vs_order_size_plot(slippage_df, output_dir="results/images", symbol="BTCUSDT"):
     """
     Create scatter plot of slippage vs order size with correlation and regression line
     """
@@ -246,7 +247,7 @@ def create_slippage_vs_order_size_plot(slippage_df, output_dir="results/images")
     )
     
     fig.update_layout(
-        title="Slippage vs Order Size",
+        title=f"{symbol} Slippage vs Order Size",
         xaxis_title="Order Size (eqty)",
         yaxis_title="Slippage (bps)",
         template="plotly_white",
@@ -254,18 +255,19 @@ def create_slippage_vs_order_size_plot(slippage_df, output_dir="results/images")
         height=500
     )
     
-    # Save plot
+    # Save plot with symbol prefix
     Path(output_dir).mkdir(parents=True, exist_ok=True)
-    fig.write_html(f"{output_dir}/slippage_vs_order_size.html")
+    symbol_lower = symbol.lower()
+    fig.write_html(f"{output_dir}/{symbol_lower}_slippage_vs_order_size.html")
     try:
-        fig.write_image(f"{output_dir}/slippage_vs_order_size.png", width=800, height=500, scale=2)
+        fig.write_image(f"{output_dir}/{symbol_lower}_slippage_vs_order_size.png", width=800, height=500, scale=2)
     except:
         print("Warning: Could not save PNG image. HTML version saved successfully.")
     
     print(f"Slippage vs order size plot saved to {output_dir}/")
     return fig, correlation, function_text
 
-def create_slippage_vs_volatility_plot(analysis_df, output_dir="results/images"):
+def create_slippage_vs_volatility_plot(analysis_df, output_dir="results/images", symbol="BTCUSDT"):
     """
     Create scatter plot of slippage vs market volatility
     """
@@ -338,7 +340,7 @@ def create_slippage_vs_volatility_plot(analysis_df, output_dir="results/images")
     )
     
     fig.update_layout(
-        title="Slippage vs Market Volatility",
+        title=f"{symbol} Slippage vs Market Volatility",
         xaxis_title="Mid Price Volatility",
         yaxis_title="Slippage (bps)",
         template="plotly_white",
@@ -346,18 +348,19 @@ def create_slippage_vs_volatility_plot(analysis_df, output_dir="results/images")
         height=500
     )
     
-    # Save plot
+    # Save plot with symbol prefix
     Path(output_dir).mkdir(parents=True, exist_ok=True)
-    fig.write_html(f"{output_dir}/slippage_vs_volatility.html")
+    symbol_lower = symbol.lower()
+    fig.write_html(f"{output_dir}/{symbol_lower}_slippage_vs_volatility.html")
     try:
-        fig.write_image(f"{output_dir}/slippage_vs_volatility.png", width=800, height=500, scale=2)
+        fig.write_image(f"{output_dir}/{symbol_lower}_slippage_vs_volatility.png", width=800, height=500, scale=2)
     except:
         print("Warning: Could not save PNG image. HTML version saved successfully.")
     
     print(f"Slippage vs volatility plot saved to {output_dir}/")
     return fig, correlation, function_text
 
-def create_slippage_vs_liquidity_plot(analysis_df, output_dir="results/images"):
+def create_slippage_vs_liquidity_plot(analysis_df, output_dir="results/images", symbol="BTCUSDT"):
     """
     Create scatter plot of slippage vs liquidity
     """
@@ -430,7 +433,7 @@ def create_slippage_vs_liquidity_plot(analysis_df, output_dir="results/images"):
     )
     
     fig.update_layout(
-        title="Slippage vs Liquidity",
+        title=f"{symbol} Slippage vs Liquidity",
         xaxis_title="Average Liquidity (bid-1 + ask-1 volumes)",
         yaxis_title="Slippage (bps)",
         template="plotly_white",
@@ -438,11 +441,12 @@ def create_slippage_vs_liquidity_plot(analysis_df, output_dir="results/images"):
         height=500
     )
     
-    # Save plot
+    # Save plot with symbol prefix
     Path(output_dir).mkdir(parents=True, exist_ok=True)
-    fig.write_html(f"{output_dir}/slippage_vs_liquidity.html")
+    symbol_lower = symbol.lower()
+    fig.write_html(f"{output_dir}/{symbol_lower}_slippage_vs_liquidity.html")
     try:
-        fig.write_image(f"{output_dir}/slippage_vs_liquidity.png", width=800, height=500, scale=2)
+        fig.write_image(f"{output_dir}/{symbol_lower}_slippage_vs_liquidity.png", width=800, height=500, scale=2)
     except:
         print("Warning: Could not save PNG image. HTML version saved successfully.")
     
@@ -518,6 +522,30 @@ def run_comprehensive_slippage_analysis(parquet_path="results/btcusdt_processed_
     # 1. Load processed data
     df = load_processed_data(parquet_path)
     
+    return run_comprehensive_slippage_analysis_with_data(df, output_dir, start_time)
+
+def run_comprehensive_slippage_analysis_with_data(df, output_dir="results/images", start_time=None, symbol="BTCUSDT"):
+    """
+    Run comprehensive slippage analysis with pre-loaded data
+    
+    Args:
+        df: Pre-loaded Polars DataFrame with processed data
+        output_dir: Directory to save visualization outputs
+        start_time: Optional start time for timing calculations
+        symbol: Trading symbol for consistency (not used in file naming for slippage analysis)
+        
+    Returns:
+        dict: Analysis results and statistics
+    """
+    print("="*60)
+    print("COMPREHENSIVE SLIPPAGE ANALYSIS")
+    print("="*60)
+    
+    if start_time is None:
+        start_time = time.time()
+    
+    print(f"Using processed data with {len(df)} records.")
+    
     # 2. Calculate slippage
     slippage_df = calculate_slippage(df)
     if slippage_df is None:
@@ -543,20 +571,20 @@ def run_comprehensive_slippage_analysis(parquet_path="results/btcusdt_processed_
     print("\nGenerating visualizations...")
     
     # Slippage distribution
-    dist_fig = create_slippage_distribution_plot(slippage_df, output_dir)
+    dist_fig = create_slippage_distribution_plot(slippage_df, output_dir, symbol)
     
     # Slippage vs order size
-    size_result = create_slippage_vs_order_size_plot(slippage_df, output_dir)
+    size_result = create_slippage_vs_order_size_plot(slippage_df, output_dir, symbol)
     size_correlation = size_result[1] if size_result else None
     size_function = size_result[2] if size_result else None
     
     # Slippage vs volatility
-    vol_result = create_slippage_vs_volatility_plot(analysis_df, output_dir)
+    vol_result = create_slippage_vs_volatility_plot(analysis_df, output_dir, symbol)
     vol_correlation = vol_result[1] if vol_result else None
     vol_function = vol_result[2] if vol_result else None
     
     # Slippage vs liquidity
-    liq_result = create_slippage_vs_liquidity_plot(analysis_df, output_dir)
+    liq_result = create_slippage_vs_liquidity_plot(analysis_df, output_dir, symbol)
     liq_correlation = liq_result[1] if liq_result else None
     liq_function = liq_result[2] if liq_result else None
     
@@ -580,10 +608,10 @@ def run_comprehensive_slippage_analysis(parquet_path="results/btcusdt_processed_
             }
         },
         "visualizations": {
-            "slippage_distribution": f"{output_dir}/slippage_distribution.html",
-            "slippage_vs_order_size": f"{output_dir}/slippage_vs_order_size.html",
-            "slippage_vs_volatility": f"{output_dir}/slippage_vs_volatility.html",
-            "slippage_vs_liquidity": f"{output_dir}/slippage_vs_liquidity.html"
+            "slippage_distribution": f"{output_dir}/{symbol.lower()}_slippage_distribution.html",
+            "slippage_vs_order_size": f"{output_dir}/{symbol.lower()}_slippage_vs_order_size.html",
+            "slippage_vs_volatility": f"{output_dir}/{symbol.lower()}_slippage_vs_volatility.html",
+            "slippage_vs_liquidity": f"{output_dir}/{symbol.lower()}_slippage_vs_liquidity.html"
         }
     }
     

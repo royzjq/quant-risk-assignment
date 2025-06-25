@@ -87,7 +87,7 @@ def detect_outliers(values, threshold=2.5):
     outlier_values = values[outlier_indices]
     return outlier_indices, outlier_values, z_scores
 
-def create_latency_distribution_plots(latency_df, output_dir="results/images"):
+def create_latency_distribution_plots(latency_df, output_dir="results/images", symbol="BTCUSDT"):
     """
     Create distribution plots for all three latency types
     """
@@ -169,7 +169,7 @@ def create_latency_distribution_plots(latency_df, output_dir="results/images"):
         row += 1
     
     fig.update_layout(
-        title="Latency Analysis - Distribution Plots",
+        title=f"{symbol} Latency Analysis - Distribution Plots",
         showlegend=False,
         template="plotly_white",
         height=1200,
@@ -186,20 +186,27 @@ def create_latency_distribution_plots(latency_df, output_dir="results/images"):
     fig.update_yaxes(title_text="Frequency", row=2, col=1)
     fig.update_yaxes(title_text="Frequency", row=3, col=1)
     
-    # Save plot
+    # Save plot with symbol prefix
     Path(output_dir).mkdir(parents=True, exist_ok=True)
-    fig.write_html(f"{output_dir}/latency_distributions.html")
+    symbol_lower = symbol.lower()
+    fig.write_html(f"{output_dir}/{symbol_lower}_latency_distributions.html")
     try:
-        fig.write_image(f"{output_dir}/latency_distributions.png", width=800, height=1200, scale=2)
+        fig.write_image(f"{output_dir}/{symbol_lower}_latency_distributions.png", width=800, height=1200, scale=2)
     except:
         print("Warning: Could not save PNG image. HTML version saved successfully.")
     
     print(f"Latency distribution plots saved to {output_dir}/")
     return fig
 
-def detect_and_export_latency_outliers(latency_df, output_dir="results", threshold=2.5):
+def detect_and_export_latency_outliers(latency_df, output_dir="results", threshold=2.5, symbol="BTCUSDT"):
     """
     Detect outliers (> 2.5 sigma) for all latency types and export to JSON
+    
+    Args:
+        latency_df: DataFrame with latency calculations
+        output_dir: Directory to save the output file
+        threshold: Z-score threshold for outlier detection
+        symbol: Trading symbol for file naming
     """
     print(f"Detecting latency outliers with {threshold} sigma threshold...")
     
@@ -269,7 +276,7 @@ def detect_and_export_latency_outliers(latency_df, output_dir="results", thresho
     
     # Export to JSON
     timestamp = time.strftime("%Y%m%d_%H%M%S")
-    output_file = f"{output_dir}/latency_outliers_{timestamp}.json"
+    output_file = f"{output_dir}/latency_outliers_{symbol.lower()}_{timestamp}.json"
     
     Path(output_dir).mkdir(parents=True, exist_ok=True)
     with open(output_file, 'w', encoding='utf-8') as f:
@@ -335,6 +342,31 @@ def run_comprehensive_latency_analysis(parquet_path="results/btcusdt_processed_d
     # 1. Load processed data
     df = load_processed_data(parquet_path)
     
+    return run_comprehensive_latency_analysis_with_data(df, output_dir, outlier_threshold, start_time)
+
+def run_comprehensive_latency_analysis_with_data(df, output_dir="results", outlier_threshold=2.5, start_time=None, symbol="BTCUSDT"):
+    """
+    Run comprehensive latency analysis with pre-loaded data
+    
+    Args:
+        df: Pre-loaded Polars DataFrame with processed data
+        output_dir: Directory to save outputs
+        outlier_threshold: Z-score threshold for outlier detection (default: 2.5 sigma)
+        start_time: Optional start time for timing calculations
+        symbol: Trading symbol for file naming
+        
+    Returns:
+        dict: Analysis results and statistics
+    """
+    print("="*60)
+    print("COMPREHENSIVE LATENCY ANALYSIS")
+    print("="*60)
+    
+    if start_time is None:
+        start_time = time.time()
+    
+    print(f"Using processed data with {len(df)} records.")
+    
     # 2. Calculate latencies
     latency_df = calculate_latencies(df)
     if latency_df is None:
@@ -346,12 +378,75 @@ def run_comprehensive_latency_analysis(parquet_path="results/btcusdt_processed_d
     # 4. Create visualizations
     print("\nGenerating visualizations...")
     images_dir = f"{output_dir}/images"
-    dist_fig = create_latency_distribution_plots(latency_df, images_dir)
+    dist_fig = create_latency_distribution_plots(latency_df, images_dir, symbol)
     
     # 5. Detect and export outliers
-    outliers_data, outliers_file = detect_and_export_latency_outliers(
-        latency_df, output_dir, threshold=outlier_threshold
-    )
+    print("\nDetecting latency outliers...")
+    
+    # Create timestamp for file naming
+    timestamp = int(time.time())
+    outliers_data = {}
+    
+    for latency_type in ['exchange_processing_latency', 'network_latency', 'strategy_processing_latency']:
+        # Get valid data
+        valid_records = latency_df.filter(pl.col(latency_type).is_not_null())
+        
+        if len(valid_records) == 0:
+            print(f"No valid data for {latency_type}")
+            outliers_data[latency_type] = {
+                "outliers_count": 0,
+                "outliers_file": None
+            }
+            continue
+            
+        values = valid_records[latency_type].to_numpy()
+        outlier_indices, outlier_values, z_scores = detect_outliers(values, threshold=outlier_threshold)
+        
+        if len(outlier_indices) > 0:
+            print(f"Found {len(outlier_indices)} {latency_type} outliers (threshold: {outlier_threshold}σ)")
+            
+            # Export outliers to JSON
+            outliers_list = []
+            outlier_df = valid_records[outlier_indices]
+            
+            for i, row in enumerate(outlier_df.iter_rows(named=True)):
+                outliers_list.append({
+                    'index': i,
+                    'latency_value': float(outlier_values[i]),
+                    'z_score': float(z_scores[outlier_indices[i]]),
+                    'exec_id': row.get('exec_id', None),
+                    'exec_datetime': str(row.get('exec_datetime', '')),
+                    'side': row.get('sde', None),
+                    'quantity': float(row.get('eqty', 0)) if row.get('eqty') is not None else None,
+                    'price': float(row.get('px', 0)) if row.get('px') is not None else None
+                })
+            
+            # Save outliers to JSON file with symbol prefix
+            output_file = f"{output_dir}/{symbol.lower()}_{latency_type}_outliers_{timestamp}.json"
+            with open(output_file, 'w') as f:
+                json.dump({
+                    'symbol': symbol,
+                    'analysis_type': f'{latency_type}_outliers',
+                    'threshold_sigma': outlier_threshold,
+                    'total_outliers': len(outliers_list),
+                    'outliers': outliers_list
+                }, f, indent=2)
+            
+            print(f"{latency_type} outliers saved to {output_file}")
+            
+            # Store for results
+            outliers_data[latency_type] = {
+                "outliers_count": len(outlier_indices),
+                "outliers_file": output_file
+            }
+        else:
+            print(f"No {latency_type} outliers found (threshold: {outlier_threshold}σ)")
+            outliers_data[latency_type] = {
+                "outliers_count": 0,
+                "outliers_file": None
+            }
+    
+    print("="*60)
     
     # 6. Compile results
     results = {
@@ -360,14 +455,17 @@ def run_comprehensive_latency_analysis(parquet_path="results/btcusdt_processed_d
         "summary_statistics": stats,
         "outlier_analysis": {
             "threshold_sigma": outlier_threshold,
-            "outliers_file": outliers_file,
             "outlier_counts": {
                 latency_type: data.get("outliers_count", 0) 
+                for latency_type, data in outliers_data.items()
+            },
+            "outlier_files": {
+                latency_type: data.get("outliers_file", None)
                 for latency_type, data in outliers_data.items()
             }
         },
         "visualizations": {
-            "latency_distributions": f"{images_dir}/latency_distributions.html"
+            "latency_distributions": f"{images_dir}/{symbol.lower()}_latency_distributions.html"
         }
     }
     
@@ -377,24 +475,22 @@ def run_comprehensive_latency_analysis(parquet_path="results/btcusdt_processed_d
     print("="*60)
     print(f"Analysis completed in {results['execution_time']:.2f} seconds")
     
-    for latency_type, latency_stats in stats.items():
-        if latency_stats:
+    for latency_type, stats_data in stats.items():
+        if stats_data:
             print(f"\n{latency_type.replace('_', ' ').title()}:")
-            print(f"  - Count: {latency_stats.get('count', 0)}")
-            print(f"  - Mean: {latency_stats.get('mean_us', 0):.0f} μs")
-            print(f"  - Median: {latency_stats.get('median_us', 0):.0f} μs")
-            print(f"  - P95: {latency_stats.get('p95_us', 0):.0f} μs")
-            print(f"  - P99: {latency_stats.get('p99_us', 0):.0f} μs")
+            print(f"  - Count: {stats_data['count']}")
+            print(f"  - Mean: {stats_data['mean_us']:.2f} μs")
+            print(f"  - Median: {stats_data['median_us']:.2f} μs")
+            print(f"  - P95: {stats_data['p95_us']:.2f} μs")
+            print(f"  - P99: {stats_data['p99_us']:.2f} μs")
             
-            # Show outlier info
-            outlier_count = results['outlier_analysis']['outlier_counts'].get(latency_type, 0)
-            if outlier_count > 0:
-                total_count = latency_stats.get('count', 0)
-                outlier_pct = (outlier_count / total_count) * 100 if total_count > 0 else 0
+            if latency_type in outliers_data:
+                outlier_count = outliers_data[latency_type]['outliers_count']
+                outlier_pct = (outlier_count / stats_data['count']) * 100
                 print(f"  - Outliers (>{outlier_threshold}σ): {outlier_count} ({outlier_pct:.2f}%)")
     
-    print(f"\nOutliers exported to: {outliers_file}")
-    print(f"Visualizations saved to: {images_dir}/")
+    print(f"\nVisualization saved to: {images_dir}/{symbol.lower()}_latency_distributions.html")
+    print(f"Outlier files saved with prefix: {symbol.lower()}_")
     print("="*60)
     
     return results
